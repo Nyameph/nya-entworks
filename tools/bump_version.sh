@@ -1,0 +1,1 @@
+python bump_version.py minor

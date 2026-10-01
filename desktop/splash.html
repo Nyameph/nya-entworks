@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>呜啊娱乐工坊</title>
+    <style>
+        html, body { height: 100%; margin: 0; }
+        body {
+            display: flex; flex-direction: column; gap: 14px;
+            align-items: center; justify-content: center;
+            background: #1f2430; color: #cfd6e4;
+            font: 15px/1.6 "Microsoft YaHei", sans-serif;
+            user-select: none; cursor: default;
+        }
+        .logo {
+            width: 104px; height: 104px; border-radius: 50%;
+            /* 原图是透明底的黑衣角色，深色背景上会糊在一起，加一圈极淡的底与描边把它托出来 */
+            background: rgba(255, 255, 255, .04);
+            box-shadow: 0 0 0 1px rgba(143, 179, 255, .16);
+        }
+        .brand { font-size: 26px; letter-spacing: 2px; color: #8fb3ff; }
+        #status { opacity: .85; text-align: center; padding: 0 40px; }
+        .hint { font-size: 12px; opacity: .45; }
+    </style>
+</head>
+<body>
+<img class="logo" src="icon.png" alt="">
+<div class="brand">呜啊娱乐工坊</div>
+<div id="status">正在启动后端…</div>
+<div class="hint">首次启动需要几秒（要连数据库）；日志见 desktop/sidecar.log</div>
+<script>
+    // 壳通过 executeJavaScript 调这个函数更新文案（见 main.js 的 setStatus）
+    window.__setStatus = function (text) {
+        document.getElementById('status').textContent = text;
+    };
+</script>
+</body>
+</html>

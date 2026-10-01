@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  韵脚词典的两条整批写语句 —— 只有这两处是「整句方言不同」，其余方言差异都在
+  SqlDialect 里做成片段。
+
+  为什么从 @Insert 注解搬到这里：注解装不下两条只差几个关键字的语句，而
+  @Select/@Insert 上的语句<b>没有</b> databaseId 的概念（注解版只认方法上的 @DatabaseId，
+  没写就是 null），写不出「同一句、两个库各一份」。
+
+  **两个变体都必须显式写 databaseId**：配了 DatabaseIdProvider 之后，requiredDatabaseId
+  非 null，没写 databaseId 的 XML 语句一条都不会被加载 —— 那样两库一起坏，而不是坏一半。
+  语句体的语义逐条对齐的口径见 RhymeEntryMapper 接口上的 javadoc。
+-->
+<mapper namespace="io.github.Nyameph.nyaentworks.song.mapper.RhymeEntryMapper">
+
+    <!-- MySQL：靠 uk_text_pinyin 幂等，只补新增、不覆盖已有行 -->
+    <insert id="insertIgnoreBatch" databaseId="mysql">
+        INSERT IGNORE INTO rhyme_entry
+        (entry_type, text, pinyin, finals, rhyme_body, yun18, word_class, source,
+        tier, freq, note, create_time, update_time) VALUES
+        <foreach collection='list' item='e' separator=','>
+            (#{e.entryType}, #{e.text}, #{e.pinyin}, #{e.finals}, #{e.rhymeBody}, #{e.yun18},
+            #{e.wordClass}, #{e.source}, #{e.tier}, #{e.freq}, #{e.note}, NOW(), NOW())
+        </foreach>
+    </insert>
+
+    <!--
+      SQLite：INSERT OR IGNORE 是它那边的同义写法。
+
+      时间戳用 datetime('now','localtime') 而**不是** CURRENT_TIMESTAMP：后者在 SQLite
+      里返回 UTC（在 MySQL 里返回会话本地时间）—— 同一个库、同一张表就会有两种时刻，
+      种子灌进去的行比手工加的行早 8 小时，按时间排出来是乱的。
+      datetime(...) 的产物是 'YYYY-MM-DD HH:MM:SS'，与 MySQL 那边同一个形状，
+      MyBatis 的 LocalDateTimeTypeHandler 两种写法都读得回来（实测过）。
+    -->
+    <insert id="insertIgnoreBatch" databaseId="sqlite">
+        INSERT OR IGNORE INTO rhyme_entry
+        (entry_type, text, pinyin, finals, rhyme_body, yun18, word_class, source,
+        tier, freq, note, create_time, update_time) VALUES
+        <foreach collection='list' item='e' separator=','>
+            (#{e.entryType}, #{e.text}, #{e.pinyin}, #{e.finals}, #{e.rhymeBody}, #{e.yun18},
+            #{e.wordClass}, #{e.source}, #{e.tier}, #{e.freq}, #{e.note},
+            datetime('now','localtime'), datetime('now','localtime'))
+        </foreach>
+    </insert>
+
+    <!--
+      MySQL 的 upsert：VALUES(col) 取「本次待插入」的值、裸 col 取「已有行」的值，
+      所以 freq = IF(source='CORPUS', VALUES(freq), freq) 读作「撞上的已有行是语料词就用新
+      计数覆盖，是 XLSX/MANUAL/OPEN 就把原值写回自己」—— 即「人工添加的行永远优先」。
+    -->
+    <insert id="upsertCorpusBatch" databaseId="mysql">
+        INSERT INTO rhyme_entry
+        (entry_type, text, pinyin, finals, rhyme_body, yun18, word_class, source,
+        tier, freq, note, create_time, update_time) VALUES
+        <foreach collection='list' item='e' separator=','>
+            (#{e.entryType}, #{e.text}, #{e.pinyin}, #{e.finals}, #{e.rhymeBody}, #{e.yun18},
+            #{e.wordClass}, #{e.source}, #{e.tier}, #{e.freq}, #{e.note}, NOW(), NOW())
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        update_time = IF(source = 'CORPUS', NOW(), update_time),
+        freq = IF(source = 'CORPUS', VALUES(freq), freq)
+    </insert>
+
+    <!--
+      SQLite 的 upsert。两处注意：
+      · ON CONFLICT(text, pinyin) 要求那边有完全同形的 UNIQUE(text, pinyin) —— 由建表脚本
+        转换器把 uk_text_pinyin 内联出来，否则这里抛「no matching constraint」。
+      · DO UPDATE SET 里，不带前缀的列名指「已有行」（与 MySQL 的裸 col 同义），
+        带 excluded. 的指「本次待插入」的值（与 VALUES(col) 同义）。逐字对齐上面那条的语义。
+      · 时间戳同 insertIgnoreBatch：必须用 datetime('now','localtime')，CURRENT_TIMESTAMP 是 UTC。
+    -->
+    <insert id="upsertCorpusBatch" databaseId="sqlite">
+        INSERT INTO rhyme_entry
+        (entry_type, text, pinyin, finals, rhyme_body, yun18, word_class, source,
+        tier, freq, note, create_time, update_time) VALUES
+        <foreach collection='list' item='e' separator=','>
+            (#{e.entryType}, #{e.text}, #{e.pinyin}, #{e.finals}, #{e.rhymeBody}, #{e.yun18},
+            #{e.wordClass}, #{e.source}, #{e.tier}, #{e.freq}, #{e.note},
+            datetime('now','localtime'), datetime('now','localtime'))
+        </foreach>
+        ON CONFLICT(text, pinyin) DO UPDATE SET
+        update_time = CASE WHEN rhyme_entry.source = 'CORPUS'
+        THEN datetime('now','localtime') ELSE rhyme_entry.update_time END,
+        freq = CASE WHEN rhyme_entry.source = 'CORPUS' THEN excluded.freq
+        ELSE rhyme_entry.freq END
+    </insert>
+
+</mapper>

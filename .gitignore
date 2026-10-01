@@ -1,0 +1,92 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### e-hentai 数据 dump 与合并产物（体积巨大，不进仓库）###
+data/EHdb/
+data/exhentai-database/
+data/eh-gallery.db
+
+# 本机 hook 脚本（自动 git add 新文件），与 .claude/settings.local.json 一样纯本机、不进仓库
+.claude/hooks/
+.claude/settings.local.json
+
+# 别的 AI 编辑器（zcode）的工作目录：会话计划与一次性脚本，与本项目无关
+.zcode/
+
+### Python 缓存（tools/ 下的脚本跑一次就会生成）###
+__pycache__/
+*.pyc
+
+### 数据库自动备份（tools/mysql.py 写操作前 mysqldump 的产物，含真实数据）###
+.local-backup/
+
+### Electron 壳（desktop/）###
+desktop/node_modules/
+### 壳的运行时状态（日志 / pid）：**不写路径前缀 = 两个位置都盖**。
+### 打包态 cwd 是 exe 所在的工作区，开发态（`desktop\启动.cmd`）cwd 是**仓库根** ——
+### 于是同样两个文件会落在 desktop/ 与仓库根各一份。
+### 根上那两份曾被初始化提交的 `git add -A` 误收进仓库（内容是运行日志，还带着本机的
+### 旧目录名与用户名，且不在 publish.py 的排除名单里 —— 会直接发到公开仓库），
+### 已 `git rm --cached`，下面这三行正是为了连根一起盖住。
+sidecar.log
+sidecar.prev.log
+.sidecar.pid
+desktop/dist/
+### 本机 JDK 根目录（启动.cmd 的 (0) 步读它锁 JAVA_HOME）。
+### 与 config/*.yaml 同一条规矩：**本机状态**，不是出厂值 —— 项目要 Java 25，
+### 而机器默认可能是旧的；仓库里带上某台机器的路径只会让别的机器莫名指向不存在的目录。
+### 文件不在 = 回落到环境变量里的 JAVA_HOME（与加这个文件之前完全一样）。
+desktop/java-home.txt
+
+### 配置页写的覆盖层（config/nya-entworks.yaml）###
+### 它是**本机差异**（本机的 F:\ 路径、NConvert 位置、常用开关）＋ **裁剪的介质**
+### （留哪个模块，哪一段的 enabled: true 就在里面），页面每次保存都整份重写，
+### 提交进来只会是无意义的逐行 diff。
+### ★ 注意：2026-09-25 起 application.yaml 里**没有** nya-entworks: 段了，所以
+###   「删掉这个文件就回到出厂状态」**不再成立** —— 删了等于三个 <模块>.enabled 键
+###   都读不到 ＝ 三个模块一起消失（配置页整块不显示、接口不注册），自检会报 ERROR。
+###   仓库里那份可拷的底稿是 config/nya-entworks.example.yaml（**那个是跟踪的**）。
+###   理由见 docs/桌面化与模块裁剪设计.md §5.2，待办见 docs/待做清单.md 第 20 条。
+config/nya-entworks.yaml
+config/nya-entworks.yaml.bak
+### 底稿不忽略（它就是给「交付 / 换机器」拷的），所以 example 那份这里**不能**加通配。
+
+### 密钥（cookie / api-key），由 application.yaml 的 spring.config.import 显式引入 ###
+### 2026-09-17 从 src/main/resources/application-secret.yaml 挪出来：原先靠
+### `spring.profiles.active: secret` 从 classpath 加载，位置隐式、且优先级高于上面那份
+### 覆盖层（配置页改了同名键不生效）。现在它是 config/ 下一个普通的外部文件，
+### 与 nya-entworks.yaml 在同一个 import 列表里，密钥排在前面 = 优先级更低。
+### 别把它挪回 resources —— 那等于恢复成 classpath 隐式加载。
+config/application-secret.yaml
+config/application-secret.yaml.bak

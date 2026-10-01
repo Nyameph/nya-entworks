@@ -1,0 +1,80 @@
+spring:
+  application:
+    name: nya-entworks
+  config:
+    # 两个外部覆盖层，**都在这一个显式列表里**（不再用 `spring.profiles.active: secret`
+    # 那种「文件自己冒出来」的隐式加载）。两个都 optional —— 缺了只是回落出厂值 /
+    # 相关功能不可用，不是启动失败（换机器、新克隆下来第一次跑就是这样）。
+    #
+    # 列表顺序 = 优先级，**排在后面的赢**（Spring 对同一份文件里的多个 import 按声明顺序
+    # 依次生效，后导入者覆盖先导入者）：
+    #   1. application-secret.yaml —— 密钥（cookie / api-key）。本机私有，gitignored。
+    #   2. nya-entworks.yaml      —— 本机路径与常用开关，由页面左下角的配置页维护。
+    # 密钥排在前面是有意的：配置页写的是后一个文件，这样万一同名键两处都有，
+    # 页面上看到的与真正生效的还是同一个（「改了没反应」是配置页最隐蔽的坑）。
+    #
+    # 两者的键都覆盖下面的 nya-entworks 段（导入的属性优先于导入者）。
+    # 路径按**工作目录**解析，与 static-locations 同一条规矩：项目根下跑才找得到。
+    import:
+      - optional:file:./config/application-secret.yaml
+      - optional:file:./config/nya-entworks.yaml
+  web:
+    resources:
+      # 开发期直接从源码目录读静态资源：改完 js/css **刷新浏览器即生效**，不必重跑 mvn。
+      # 起因：Maven 只在 process-resources 阶段把 src/main/resources 拷进 target/classes，
+      # 不重跑就一直在服务旧拷贝；devtools 又把 static/** 排除在重启之外，不会替你补这一步 ——
+      # 症状就是「改了前端、刷新了、还是旧代码」，跟浏览器缓存长得一模一样。
+      # 第一个位置取不到时（打成 jar 跑、或工作目录不在项目根）自动回落到 classpath 里的拷贝，
+      # 也就是原先的行为 —— 所以这行最坏情况只是不生效，不会把页面搞坏。
+      # 路径按工作目录解析，`./mvnw spring-boot:run` 与 IDE 默认的 working directory 都是项目根。
+      static-locations: file:src/main/resources/static/,classpath:/static/
+      cache:
+        cachecontrol:
+          # 静态资源一律不许缓存。用 no-store 而不只是 no-cache：no-cache 仍走条件请求，
+          # 而 If-Modified-Since 与 Last-Modified 是**秒级**比较 —— 同一秒内改两次会被判成
+          # 「没变」、浏览器继续用旧的。改前端时这个坑很近。
+          no-store: true
+  # 关掉 headless：Desktop.isDesktopSupported() 在 headless 下返回 false，
+  # 新漫画页的「阅读」要用系统默认图片查看器打开封面（docs 4.8），所以这里必须 false。
+  # 本应用是单机桌面运行，本身不创建任何 Swing/AWT 界面，关掉无副作用。
+  main:
+    headless: false
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/nya_entworks?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&autoReconnect=true&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true
+    username: root
+    password: root
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    # 走 SLF4J，好处是能被下面的 logging.level 管住。
+    # 换回 org.apache.ibatis.logging.stdout.StdOutImpl 会直接 System.out 打印，
+    # 绕开日志框架、级别调不动，全表查询会刷出成千上万行 Row:。
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: input
+  mapper-locations: classpath*:mapper/**/*.xml
+
+server:
+  # /api/media/stream 在受管根内可读任意文件且无鉴权，而 Spring Boot 默认监听 0.0.0.0
+  # —— 同一 WiFi 下任何设备都能拉整个视频库。本项目是单机自用，一行配置只听本机。
+  # 代价是手机/平板访问不了；以后想躺着用平板看，得改回监听全网卡「并且」加一个
+  # 最简单的共享口令（单密码 + 拦截器），不能只把这一行删掉。
+  address: 127.0.0.1
+  port: 50721
+
+logging:
+  level:
+    # 只留 WARN 及以上：SQL 语句、参数、结果集都是 DEBUG，连接与 SqlSession
+    # 的生命周期是 DEBUG/INFO，一并压掉；报错仍会照常打出来。
+    com.baomidou.mybatisplus: warn
+    org.mybatis: warn
+    org.apache.ibatis: warn
+    # Mapper 接口所在包，SQL 日志挂在这些 logger 上。
+    # 想临时看某个 Mapper 的 SQL，把它单独调成 debug，例如：
+    #   io.github.Nyameph.nyaentworks.manga.mapper.MangaDictEntryMapper: debug
+    io.github.Nyameph.nyaentworks.manga.mapper: warn
+    io.github.Nyameph.nyaentworks.song.mapper: warn

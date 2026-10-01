@@ -1,0 +1,67 @@
+# config/nya-entworks.example.yaml —— **拷贝用的底稿**（进仓库、被跟踪）
+#
+# 这不是本机正在跑的那份。真正生效的是 config/nya-entworks.yaml（gitignored，
+# 配置页左下角齿轮保存时整份重写）。本文件的用途只有一个：
+# **交付 / 换机器时，仓库里有一份可信的起点可以拷。**
+#
+# 用法：
+#   1. 拷成 config/nya-entworks.yaml（Windows: copy config\nya-entworks.example.yaml
+#      config\nya-entworks.yaml）
+#   2. **按「这份构建要带哪些模块」删掉不要的模块段** —— 留下谁，谁那一段的
+#      `enabled: true` 就在；不留的**整段删掉**。这就是全部裁剪动作，
+#      见 docs/桌面化与模块裁剪设计.md §5。
+#   3. 起来之后进配置页把本机路径（F:\ 那几个根、NConvert、代理端口）填一遍，保存
+#      —— 那一刻起这份文件由页面接管（注释会被重写成页面自己的说明，属正常）。
+#
+# ⚠️ 交付时别忘了带上它：没有覆盖层 = 三个 <模块>.enabled 键都读不到 = **三个模块
+#    一起消失**（配置页整块不显示、左侧导航空、接口不注册）。这不是报错，是静默的。
+#    配置页左下角的「环境自检」会在这种状态下报一条 ERROR（EnvCheckService 的
+#    「一个模块都没有」检查）—— 那是唯一能在界面上看见它的地方。
+#
+# ⚠️ 别往 src/main/resources/application.yaml 里加回 nya-entworks: 段：内侧留一份就等于
+#    给「外侧删掉的模块」留一条复活路径，裁剪会静默失效（键照样读得到、模块照样在）。
+#    理由写在 docs/桌面化与模块裁剪设计.md §5.2 那个 box 里。
+#
+# 密钥不在这个文件里（网易云 cookie、在线 AI 端点密钥都在 config/application-secret.yaml）。
+# 唯一例外是 manga.eh-scan.cookie —— 它必须与站点根成对换、2026-09-25 起收进了配置页，
+# 所以它写在 nya-entworks.yaml 里（本机文件、已 gitignore）。**本底稿里不含它的值。**
+
+nya-entworks:
+  manga:
+    # 这个模块在不在。删掉这一行或整个 manga: 段 ＝ 本次构建里没有漫画模块（配置页整块不显示）
+    enabled: true
+  song:
+    # 同上。留歌不留漫画的「只要歌曲的那份构建」＝ 本文件里只留 song 这一段
+    enabled: true
+  shout:
+    enabled: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 下面这一段是**注释**，不是配置。它记着一件容易静默出事的事，写在这儿是为了
+# 下次「换机器 / 交付」时能看见 —— 记在 docs/待做清单.md 第 20 条里也是这个理由。
+#
+# 2026-09-25 把 application.yaml 的 nya-entworks: 整段删掉之后（有意为之，理由见上），
+# 有四项的**生效值变了** —— 原先那段 yaml 里有、Java 字段默认值是另一个值，本机覆盖层
+# 里又没写，于是它们静默回落。下面是逐项对照，「要恢复」就取消注释加进
+# config/nya-entworks.yaml（覆盖层对任何键都生效，不管配置页认不认它）：
+#
+#   manga.unarchived-dir                  F:\MangaIndie                → F:\NetdiskDownload\#待整理散漫
+#   manga.eh-scan.thumbnail-search        true                         → false   （封面反搜现在是关的）
+#   manga.eh-scan.thumbnail-min-title-sim 0.4                          → 0.0
+#   song.fill-ai.enabled                  true                         → false   （本机覆盖层写了 true，所以本机看不出来）
+#
+# 前两项与第四项是「本机差异」（这台机器上有 NConvert / 装了 Ollama），本来就该写在覆盖层；
+# 本机那份覆盖层里 unarchived-dir 与 fill-ai.enabled 都写着，所以只有**换机器**才会露出来。
+# 后两项 eh-scan 的（thumbnail-search / thumbnail-min-title-sim）**配置页上没有**（不在
+# SettingsCatalog 里），要改只能手写进覆盖层 —— 手写的键在页面保存时会被原样保留。
+#
+# 要恢复原样就把下面几行挪进 config/nya-entworks.yaml 的对应模块段下：
+#
+#   manga:
+#     unarchived-dir: 'F:\MangaIndie'
+#     eh-scan:
+#       thumbnail-search: true
+#       thumbnail-min-title-sim: 0.4
+#   song:
+#     fill-ai:
+#       enabled: true

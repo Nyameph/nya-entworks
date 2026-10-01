@@ -1,0 +1,3717 @@
+/* 单人本机系统，样式够用即止：一套变量 + 少量组件类，不引入框架 */
+:root {
+    /* 左侧导航宽。阅读页只在它右边展开（不盖住菜单），两处共用这个值 */
+    --sidebar-w: 208px;
+    --bg: #14161a;
+    --panel: #1c1f26;
+    --panel-2: #23272f;
+    --border: #2e333d;
+    --text: #e6e8ec;
+    --text-dim: #9aa3b2;
+    --accent: #5b9dff;
+    --ok: #3fb950;
+    --warn: #d29922;
+    --err: #f85149;
+    --radius: 6px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.6 "Microsoft YaHei", "Segoe UI", sans-serif;
+}
+
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ---------- 左侧导航 ---------- */
+.sidebar {
+    width: var(--sidebar-w);
+    flex: 0 0 var(--sidebar-w);
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.brand {
+    padding: 18px 16px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* 品牌区右侧的版本号（`呜啊娱乐工坊 v1.0.1`，由 app.js 从 /api/version 填）。
+   letter-spacing 要归零：父级那条 2px 是给 4 个汉字的字距，套到 `v1.0.1` 上
+   会字字散开、看着像另一个词，末尾还会多出一段空隙推歪右边缘 */
+.brand-ver {
+    margin-left: 6px;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--text-dim);
+}
+
+.nav {
+    list-style: none;
+    margin: 0;
+    padding: 8px 0;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.nav li > a {
+    display: block;
+    padding: 8px 16px;
+    color: var(--text-dim);
+    text-decoration: none;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+}
+
+.nav li > a:hover {
+    background: var(--panel-2);
+    color: var(--text);
+}
+
+.nav li > a.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: var(--panel-2);
+}
+
+.nav .nav-group {
+    padding: 12px 16px 4px;
+    font-size: 12px;
+    color: #6b7382;
+}
+
+.nav .nav-sub > a {
+    padding-left: 30px;
+    font-size: 13px;
+}
+
+.nav .nav-todo {
+    color: var(--warn);
+}
+
+.sidebar-foot {
+    border-top: 1px solid var(--border);
+    padding: 10px;
+}
+
+/* 左下角「系统工具」那一栏：上面两条链接（文件记录 / 任务记录）+ 下面三个按钮。
+   footer 里的 nav 不需要主侧栏的撑开/滚动 */
+.sidebar-foot .nav {
+    flex: none;
+    overflow: visible;
+    padding: 0 0 8px;
+}
+
+/* 两条链接与下面三个按钮共用同一套内部几何：左右内边距都留成 11px
+   （按钮那 10px 之外还有一圈 1px 边框，链接没有 —— 补上这 1px，
+   五个入口的小图示才竖着对齐成一条线） */
+.sidebar-foot .nav li > a {
+    padding-left: 11px;
+    padding-right: 11px;
+}
+
+/* 选择器必须带上 `.nav li > a` 这一串，不能只写 `.nav-foot-link`：
+   这一栏的 <ul> 本身就带 .nav，上面 `.nav li > a { display: block }` 的特异性
+   是 (0,1,2)，高过单个类名的 (0,1,0)，会把 flex 悄悄顶掉 —— 那时
+   `.nav-foot-main`（块级 flex 容器）自己占满一行，徽章被挤到第二行。
+   症状就是「任务计数跑到另一行」，而徽章本身的数字与显隐都正常 */
+.nav li > a.nav-foot-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 链接里的「图示 + 文字」这个包裹层（按钮那边叫 .env-main，两者同形、各画一份） */
+.nav-foot-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 未完成任务数量徽章：有数才显示，由 app.js 的 refreshTaskBadge 每 10 秒刷 */
+.nav-count {
+    display: inline-block;
+    background: var(--accent);
+    color: #0d1117;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.4;
+    padding: 1px 7px;
+    border-radius: 9px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.nav-count[hidden] {
+    display: none;
+}
+
+/* 「系统工具」那栏的三个按钮（系统配置、使用说明、环境自检）共用：
+   宽度撑满，左边是「图示 + 文字」，右边贴状态灯（space-between 把它们推到两端） */
+.env-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 7px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font: inherit;
+}
+
+.env-btn + .env-btn {
+    margin-top: 6px;
+}
+
+.env-btn:hover {
+    color: var(--text);
+    border-color: #3d4450;
+}
+
+/* 按钮里的「图示 + 文字」这个包裹层（链接那边叫 .nav-foot-main）
+   —— 与环境自检那个状态灯分家，灯才能被 space-between 推到右端 */
+.env-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 「系统工具」那一栏五个入口前的单色小图示（⚙ 系统配置 / ? 使用说明 / ✚ 环境自检 /
+   ≡ 文件记录 / ↻ 任务记录）。全部是**文本呈现**的码位，在 Windows 上单色、与旁边的
+   圆点、徽章一致 —— U+2699 不带变体选择符那条纪律同样管着另外四个（别挑默认 Emoji
+   呈现的，如 ⏱ ⌛ 🔍，那些在 Windows 上会变成彩色方块、字号也对不齐）。
+   固定 15px 宽并居中：五个图示左边缘一条线、文字也跟着一条线，
+   不然窄的 `?` 与宽的 `⚙` 会让每个标签各自错开几像素 */
+.ico {
+    font-size: 15px;
+    line-height: 1;
+    flex: 0 0 15px;
+    text-align: center;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: 0 0 8px;
+}
+
+.dot-unknown {
+    background: #4b5261;
+}
+
+.dot-ok {
+    background: var(--ok);
+}
+
+.dot-warn {
+    background: var(--warn);
+}
+
+.dot-err {
+    background: var(--err);
+}
+
+/* ---------- 工作台 ---------- */
+.workbench {
+    flex: 1;
+    min-width: 0;
+    padding: 22px 26px 60px;
+}
+
+.workbench-head h1 {
+    margin: 0;
+    font-size: 19px;
+}
+
+.page-desc {
+    margin: 6px 0 0;
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+.workbench-body {
+    margin-top: 20px;
+}
+
+/* ---------- 通用组件 ---------- */
+.card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.card > h2 {
+    margin: 0 0 12px;
+    font-size: 15px;
+}
+
+.muted {
+    color: var(--text-dim);
+}
+
+.small {
+    font-size: 12px;
+}
+
+.mono {
+    font-family: Consolas, "Courier New", monospace;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+button, select, input[type="date"], input[type="text"], textarea {
+    font: inherit;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px 11px;
+}
+
+textarea {
+    font-family: Consolas, "Courier New", monospace;
+    resize: vertical;
+}
+
+a {
+    color: var(--accent);
+}
+
+button {
+    cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+    border-color: #414957;
+}
+
+button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0d1117;
+    font-weight: 600;
+}
+
+.btn-plain {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-dim);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+th {
+    color: var(--text-dim);
+    font-weight: 500;
+    font-size: 12px;
+}
+
+tbody tr:hover {
+    background: var(--panel-2);
+}
+
+/* 编辑/删除后聚焦的行短暂高亮，让眼睛跟住原来的位置 */
+tr.row-flash {
+    background: rgba(91, 157, 255, .15);
+}
+
+/* 四步进度点 */
+.steps {
+    display: inline-flex;
+    gap: 10px;
+    font-size: 12px;
+}
+
+.step-on {
+    color: var(--ok);
+}
+
+.step-off {
+    color: #5a6373;
+}
+
+.tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+}
+
+.tag-ok {
+    color: var(--ok);
+    border-color: rgba(63, 185, 80, .4);
+}
+
+.tag-warn {
+    color: var(--warn);
+    border-color: rgba(210, 153, 34, .4);
+}
+
+.tag-err {
+    color: var(--err);
+    border-color: rgba(248, 81, 73, .4);
+}
+
+/* 继承评分：同绿色系但更暗淡/半透明，与「单独」的实色区分 */
+.tag-dim {
+    color: var(--ok);
+    border-color: rgba(63, 185, 80, .25);
+    opacity: .55;
+}
+
+/* 编辑弹窗标签栏的继承态：预填的是父级标签（作者相关标签），灰态区分，输入后移除 */
+.am-inherited {
+    color: var(--text-dim);
+    opacity: .6;
+}
+
+/* ---------- 标签选择框（修改/归档弹窗 + 归档作者页表单）：2 级联动下拉 + 已选 chip ---------- */
+.tag-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.tp-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 继承态：预填的是父级标签，灰态区分，用户一增删就转实 */
+.tp-chip.tp-inherited {
+    color: var(--text-dim);
+    opacity: .6;
+}
+
+.tp-del {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0 2px;
+}
+
+.tp-del:hover {
+    color: var(--err);
+}
+
+/* 第一级大类 + 第二级标签（可输入搜索/添加） */
+.tp-controls {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.tp-cat {
+    max-width: 150px;
+}
+
+.tp-tagbox {
+    position: relative;
+    flex: 1;
+    min-width: 170px;
+    max-width: 320px;
+}
+
+.tp-tag-input {
+    width: 100%;
+}
+
+.tp-tag-list {
+    position: fixed;   /* 脱离 modal-body 的 overflow 裁剪，top/left/width 由 JS 按输入框位置算 */
+    max-height: 220px;
+    overflow-y: auto;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+    z-index: 100;
+}
+
+.tp-opt {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.tp-opt:hover {
+    background: var(--panel);
+}
+
+.tp-opt-add {
+    color: var(--accent);
+    border-top: 1px solid var(--border);
+}
+
+.tp-en {
+    color: var(--text-dim);
+    font-size: .85em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 候选右侧的命名空间 + 英文名，靠右 */
+.tp-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+/* 命名空间小标记：候选与已选 chip 共用 */
+.tp-ns {
+    color: var(--text-dim);
+    font-size: .78em;
+    padding: 0 5px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    line-height: 1.4;
+}
+
+.tp-empty {
+    display: inline-block;
+}
+
+.empty {
+    padding: 26px;
+    text-align: center;
+    color: var(--text-dim);
+}
+
+.hint {
+    border-left: 2px solid var(--warn);
+    padding: 8px 12px;
+    background: rgba(210, 153, 34, .08);
+    color: #e8d5a8;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    margin-bottom: 12px;
+    font-size: 13px;
+}
+
+.hint-err {
+    border-left-color: var(--err);
+    background: rgba(248, 81, 73, .08);
+    color: #f3b3af;
+}
+
+/* 「只是告诉你一声」那类（配置页顶部的提示条用它）：灰边灰底，不与黄边的提醒抢注意力 */
+.hint-info {
+    border-left-color: var(--border);
+    background: rgba(255, 255, 255, .03);
+    color: var(--text-dim);
+}
+
+/* ---- 配置页 ---- */
+/* 「提醒但能继续」那类（目录不在磁盘上、缺评分分区）不需要额外样式：
+   .hint 本身就是 warn 色，.hint-err 才是「拦住不让做」的红 */
+
+/* 一项一行 + 一行说明。用 table 是为了「标签列」「值列」跨行对齐，
+   说明那行跨两列贴在值下面 */
+.set-table {
+    width: 100%;
+}
+
+.set-table td {
+    border: 0;
+    padding: 6px 8px;
+    vertical-align: middle;
+}
+
+.set-label {
+    width: 260px;
+}
+
+.set-value {
+    white-space: nowrap;
+}
+
+/* 控件与徽章（已改 / 待重启 / 改后需重启 / 保存后恢复出厂）排在同一行的
+   一个 flex 容器里。
+   **不能用「控件 width:100% + 徽章 inline-block」那一版**（2026-09-25 实测）：
+   .set-text 是 width:100%、并且 .set-value 是 nowrap 的表格单元，徽章只能被
+   挤到格子右边外面去 —— 一行一个徽章就溢出 47px、三个徽章 168px，
+   `scrollWidth > clientWidth` 就是证据；画出来的位置正是**压到右边
+   「浏览… / 恢复出厂」那一格上**（用户 2026-09-25 报的「位置很奇怪、和其他
+   内容叠在一起」）。数字框（.set-num，110px 固定宽）与开关不受影响，
+   所以症状只在路径这类文本项上出现。
+   修法：控件让出宽度（flex:1）、徽章不参与伸缩（flex:0 0 auto）。 */
+.set-ctl {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.set-ctl .set-text {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 320px;
+}
+
+.set-ctl .set-num,
+.set-ctl .set-badge,
+.set-ctl .set-toggle {
+    flex: 0 0 auto;
+}
+
+/* 间距交给 .set-ctl 的 gap，徽章自己的 margin-left 会叠成 12px */
+.set-ctl .set-badge {
+    margin-left: 0;
+}
+
+.set-act {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+}
+
+.set-text {
+    width: 100%;
+    min-width: 320px;
+}
+
+.set-num {
+    width: 110px;
+}
+
+/* 恢复出厂的行整行压暗，一眼看出「保存后这一项就没了」 */
+.set-removed {
+    opacity: .5;
+}
+
+.set-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 9px;
+    font-size: 11px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+}
+
+.set-badge-warn {
+    border-color: var(--warn);
+    color: var(--warn);
+}
+
+.set-badge-quiet {
+    opacity: .7;
+}
+
+/* 密钥卡里的「已配置」标记。用 ok 色而不是徽章：这一列扫一眼要能分出
+   「配了」与「没配」，后者是 .muted 的灰 —— 两态差得越远越省事 */
+.set-secret-on {
+    color: var(--ok);
+    font-size: 12px;
+}
+
+/* 开关。仿 iOS 的 UISwitch：一条胶囊轨道 + 一个会滑动的白色圆钮，钮的位置与轨道颜色
+   共同表示状态，**钮上不带文字** —— 字要跟着状态变，读起来是「读」而不是「看一眼」。
+   尺寸取 iOS 的 51×31 按比例缩到 46×28（页面字号比手机小）。
+   关 = 中性灰轨道，开 = ok 绿；圆钮带一点投影，滑动时才看得出是「浮」在轨道上的。
+   原先是个写「已开启 / 已关闭」的实心块，字随状态变、且占宽度，扫一列时对不齐。 */
+.set-toggle {
+    position: relative;
+    flex: none;                 /* 在 flex 行里别被拉宽/压扁 */
+    width: 46px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 14px;
+    background: var(--border);
+    cursor: pointer;
+    transition: background-color .18s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.set-toggle .set-toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+    transition: transform .18s ease;
+}
+
+.set-toggle.on {
+    background: var(--ok);      /* 绿=开，与 iOS 一致；也用页面已有的 --ok，不引新色 */
+}
+
+/* 位移 = 轨道宽 - 左右各 2px 内边距 - 钮宽 = 46 - 4 - 24 = 18 */
+.set-toggle.on .set-toggle-knob {
+    transform: translateX(18px);
+}
+
+.set-toggle:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+/* 键盘可达：按钮的原生 outline 在深色底上看不清，换成 accent 色描边 */
+.set-toggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .set-toggle,
+    .set-toggle .set-toggle-knob {
+        transition: none;
+    }
+}
+
+/* 模块大标题那一行：标题 + 开关 + 一句说明，底下一条横线把它与卡片分开 */
+.set-mod-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 22px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.set-mod-head h2 {
+    margin: 0;
+    font-size: 17px;
+}
+
+/* 模块关掉时，原本放卡片的地方就一句话：说明这里是空的、以及为什么 */
+.set-mod-off {
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+/* 通用组（不属于任何模块的项，如「AI 端点」）用同款大标题，只是没有开关 */
+.set-generic-head {
+    margin: 22px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    font-size: 17px;
+    font-weight: 600;
+}
+
+/* 填词页的使用说明：默认收起（<details> 不带 open），点标题展开；一条一句 */
+.fill-help {
+    padding: 6px 12px;
+}
+
+.fill-help > summary {
+    cursor: pointer;
+    color: var(--warn);
+    font-size: 13px;
+    user-select: none;
+}
+
+.fill-help > ul {
+    margin: 6px 0 4px;
+    padding-left: 18px;
+    line-height: 1.75;
+}
+
+.fill-help > ul > li {
+    margin-bottom: 3px;
+}
+
+/* ---------- 抽屉与提示 ---------- */
+.drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 460px;
+    max-width: 92vw;
+    height: 100vh;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    box-shadow: -12px 0 30px rgba(0, 0, 0, .35);
+    z-index: 20;
+}
+
+/* 必须显式声明：上面的 display:flex 是作者样式，会盖掉浏览器默认的
+   [hidden] { display: none }，抽屉就关不掉了。.toast 没这问题（没声明 display），
+   但一并写上，免得以后给它加 display 时踩同一个坑 */
+.drawer[hidden],
+.toast[hidden] {
+    display: none;
+}
+
+.drawer-head {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.drawer-body {
+    padding: 12px 16px 30px;
+    overflow-y: auto;
+}
+
+.check {
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.check-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%);
+    background: #2b303a;
+    border: 1px solid var(--border);
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    z-index: 40;
+    max-width: 70vw;
+    /* 错误提示右侧挂着 ×，用 flex 排（长文折行时 × 垂直居中） */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toast-err {
+    border-color: var(--err);
+    color: #f3b3af;
+    /* 错误提示要人点掉，给个手型告诉他能点 */
+    cursor: pointer;
+}
+
+/* 错误提示的手动关闭键。基础 button 样式带底色 / 边框 / 内边距，逐项抹掉 */
+.toast-close {
+    background: transparent;
+    border-color: transparent;
+    color: inherit;
+    padding: 0 2px;
+    font-size: 15px;
+    line-height: 1;
+}
+
+.toast-close:hover:not(:disabled) {
+    color: #fff;
+    border-color: transparent;
+}
+
+.spinner {
+    color: var(--text-dim);
+    padding: 20px 0;
+}
+
+/* ---------- 漫画卡片（新漫画 / 合集共用，文档 4.8 要求四个页面同一个组件） ---------- */
+.manga-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 12px;
+}
+
+.manga-card {
+    position: relative;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* 批量勾选：浮在封面左上角，与封面点击（阅读）不冲突 */
+.manga-check {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    z-index: 2;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.manga-check:disabled {
+    cursor: not-allowed;
+    opacity: .5;
+}
+
+/* 能存储的框成绿的、被闸门挡住的框成黄的：一屏几十张时颜色比读文字快 */
+.manga-card.ok {
+    border-color: rgba(63, 185, 80, .45);
+}
+
+.manga-card.blocked {
+    border-color: rgba(210, 153, 34, .35);
+}
+
+.manga-card.selected {
+    outline: 2px solid var(--accent);
+}
+
+/* 压缩存档中：卡片锁定 —— 变蓝、封面换占位、操作按钮被「存档中」标签替代 */
+.manga-card.storing {
+    border-color: rgba(91, 157, 255, .6);
+    background: rgba(91, 157, 255, .08);
+}
+
+.manga-card.storing .manga-cover-none {
+    color: var(--accent);
+}
+
+/* 合集卡片存档中：整卡变蓝、操作收成一行提示 */
+.card.storing {
+    border-color: rgba(91, 157, 255, .6);
+    background: rgba(91, 157, 255, .08);
+}
+
+/* 封面按 3:4 留位，图没加载完时布局不会跳 */
+.manga-cover {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    background: #12141a;
+    border-radius: var(--radius);
+    display: block;
+    cursor: pointer;
+}
+
+.manga-cover-none {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    background: #12141a;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #5a6373;
+    font-size: 12px;
+}
+
+/* 文件夹名要能完整看到，长名折行而不是截断 —— 判断改名对不对全靠它 */
+.manga-name {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.45;
+    word-break: break-all;
+}
+
+.manga-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+/* 匹配规则/是否评分/是否规范化：三个短标签一行显示，不折行 */
+.manga-status {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    overflow: hidden;
+    font-size: 12px;
+}
+
+.manga-acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: auto;
+}
+
+.manga-acts button {
+    padding: 3px 8px;
+    font-size: 12px;
+}
+
+/* 评分四挡，选中的那挡填色 */
+.score-btn.on {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0d1117;
+    font-weight: 600;
+}
+
+/* 进度条：任务只在内存里，轮询刷这个 */
+.progress {
+    height: 6px;
+    background: #12141a;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress > div {
+    height: 100%;
+    background: var(--accent);
+    transition: width .2s;
+}
+
+.task-logs {
+    max-height: 260px;
+    overflow: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    background: #12141a;
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    white-space: pre-wrap;
+}
+
+/* 危险操作：删除按钮统一红色，红字红边 */
+.btn-danger {
+    background: transparent;
+    border-color: rgba(248, 81, 73, .45);
+    color: var(--err);
+}
+
+.btn-danger:hover:not(:disabled) {
+    border-color: var(--err);
+    background: rgba(248, 81, 73, .1);
+}
+
+/* ---------- 模态框 ---------- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .55);
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+    width: 480px;
+    max-width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 合集弹窗（漫画卡片网格）要比默认的 480px 宽 */
+.modal-wide {
+    width: min(900px, 96vw);
+}
+
+.modal-head {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.modal-foot {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.modal-close {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-dim);
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* ---------- 缺配置遮罩 ---------- */
+/* 只盖内容区：与 .reader 同一套定位，左侧导航照常能点 —— 用户还要切到别的页、
+   还要点左下角齿轮去配置，遮的是「这一页不能操作」，不是「整个应用锁死」 */
+.page-gate {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: var(--sidebar-w);
+    /* 低于 .modal-overlay 的 60（万一还有对话框要弹），高于 .drawer 的 20 */
+    z-index: 55;
+    background: rgba(0, 0, 0, .55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.page-gate-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+    width: 460px;
+    max-width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 18px 20px;
+}
+
+.page-gate-card > h2 {
+    margin: 0 0 10px;
+    font-size: 15px;
+}
+
+.page-gate-card > p {
+    margin: 8px 0;
+}
+
+.gate-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* 一项一条，左边那条黄杠与配置页顶部提示条同色系：这一页的问题都是「缺东西」 */
+.gate-list > li {
+    border-left: 3px solid var(--warn);
+    background: var(--panel-2);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    margin-bottom: 8px;
+}
+
+.gate-label {
+    font-weight: 600;
+}
+
+.gate-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+/* ---------- 阅读页 ---------- */
+/* 只占页面右边：从左侧导航的右边缘起，不盖住菜单栏 */
+.reader {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: var(--sidebar-w);
+    background: #0c0d10;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+}
+
+.reader-imgs {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* 两张图之间的细间隔：太密了分不清页，太宽了浪费纵向空间 */
+    gap: 10px;
+    /* 底部多留出操作条的高度，滑出来时不遮住最后一页图 */
+    padding: 12px 12px 110px;
+}
+
+.reader-imgs img {
+    max-width: 100%;
+    background: #12141a;
+}
+
+/* 悬浮切上一本/下一本：绝对定位于 .reader 面板内（左侧是菜单，不能盖） */
+.reader-prev,
+.reader-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 18px;
+    z-index: 51;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reader-prev {
+    left: 14px;
+}
+
+.reader-next {
+    right: 14px;
+}
+
+/* 操作条默认藏在面板下缘外，图片拉到底或鼠标移到下缘时才滑出来 */
+.reader-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transform: translateY(100%);
+    transition: transform .25s ease;
+    z-index: 52;
+}
+
+.reader-bar.reader-bar-visible {
+    transform: none;
+}
+
+.reader-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.r-name-check {
+    font-size: 12px;
+}
+
+/* 图片宽度滑块跟主题色 */
+input[type="range"] {
+    accent-color: var(--accent);
+    width: 130px;
+}
+
+/* 扫描栏计数标签：选中时高亮成强调色 */
+button.tag-filter-on {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(91, 157, 255, .12);
+}
+
+/* ---------- 未识别展会/原作 图标按钮 ---------- */
+.dict-icon {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 4px;
+    padding: 3px 9px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--text);
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dict-icon-exhibit {
+    background: rgba(91, 157, 255, .14);
+    border-color: rgba(91, 157, 255, .4);
+}
+
+.dict-icon-parody {
+    background: rgba(210, 153, 34, .14);
+    border-color: rgba(210, 153, 34, .4);
+}
+
+.dict-icon:hover {
+    filter: brightness(1.2);
+}
+
+/* 补录弹窗里的目录封面缩略图网格：一眼认出是哪本 */
+.dict-folders {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.dict-folder {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dict-thumb {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    background: #12141a;
+    border-radius: 4px;
+}
+
+/* ---------- 合并冲突并排比对（文档 4.6） ---------- */
+.conflict-row {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+}
+
+.conflict-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.conflict-col-head {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-size: 13px;
+}
+
+.cf-search {
+    width: 100%;
+    padding: 7px 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+}
+
+.cf-search:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.conflict-col-body {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    flex: 1;
+    min-height: 220px;
+}
+
+/* 列内「相似 / 无相似」分组标题 */
+.conflict-group-title {
+    margin: 4px 0 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+}
+
+/* 根目录其他文件（文档 4.6 裁决：「列出 + 批量移动」两件，不做删除 / 改名）。
+   摆在漫画列表下面，用上边框把它和漫画分开 —— 它是另一批东西（不是漫画、不在库里）。 */
+.conflict-others {
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.conflict-others-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+/* 一条其他文件：勾选框 + 名字 + 大小 / 拦截标记，一行一个（横排方块放不下长文件名） */
+.cf-other {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.cf-other > .mono {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cf-other-blocked {
+    cursor: not-allowed;
+    opacity: .55;
+}
+
+.conflict-col-empty {
+    display: flex;
+    justify-content: center;
+    padding: 4px 0;
+}
+
+.conflict-ops {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    /* 悬浮在视口垂直中间、左右横排，随滚动保持可见 */
+    position: sticky;
+    top: calc(50vh - 30px);
+    align-self: flex-start;
+    z-index: 3;
+    padding: 8px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .4);
+}
+
+.conflict-ops button {
+    width: 44px;
+    height: 44px;
+    font-size: 19px;
+    font-weight: 700;
+    border-radius: 50%;
+}
+
+.conflict-ops .btn-danger {
+    font-size: 13px;
+    width: auto;
+    height: 44px;
+    border-radius: 999px;
+    padding: 0 12px;
+}
+
+/* 疑似同一作品：卡片框成强调色，右上角带「相似」小标 */
+.manga-card.conflict-matched {
+    border-color: var(--accent);
+}
+
+.manga-card.conflict-matched::after {
+    content: '相似';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 9px;
+    color: var(--accent);
+    border: 1px solid rgba(91, 157, 255, .5);
+    background: rgba(91, 157, 255, .12);
+}
+
+/* ---------- 播放浮层（文档 8.5） ---------- */
+/* 与 .reader 同样的定位：只占导航右边，不盖住菜单栏 */
+.song-player {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: var(--sidebar-w);
+    background: #0c0d10;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+}
+
+.sp-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+}
+
+.sp-title {
+    font-size: 15px;
+    font-weight: 600;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sp-banner {
+    margin: 8px 16px 0;
+}
+
+/* 画面区 + 歌词栏。歌词栏定宽，画面吃掉剩下的 */
+.sp-main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+}
+
+.sp-stage {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+}
+
+.sp-stage video {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* 音频模式：没有画面，把这块让给「当前一句」的大字（文档 8.5） */
+.song-player.sp-audio .sp-stage video {
+    /* 不能 display:none —— 那样有些浏览器会停掉解码，进而停掉音频。
+       留 1px 在角落里，它照常播 */
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+}
+
+.sp-bigwords {
+    display: none;
+}
+
+.song-player.sp-audio .sp-bigwords {
+    display: block;
+    padding: 24px;
+    text-align: center;
+    font-size: 30px;
+    line-height: 1.5;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.sp-error {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    background: rgba(248, 81, 73, .14);
+    border: 1px solid rgba(248, 81, 73, .5);
+    color: var(--text);
+    font-size: 13px;
+    max-width: 70%;
+}
+
+.sp-lyric {
+    width: 340px;
+    flex: 0 0 340px;
+    border-left: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.sp-lyric-head {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.sp-lyric-head select {
+    max-width: 100%;
+}
+
+.sp-lyric-body {
+    flex: 1;
+    overflow-y: auto;
+    /* 上下留白：当前行滚到中间时，第一句和最后一句也能到中间 */
+    padding: 40vh 14px;
+}
+
+.sp-line {
+    padding: 5px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-dim);
+    transition: color .15s ease;
+}
+
+/* 有时间轴的行可点击跳转，没有的（txt）不给手型，免得点了没反应 */
+.sp-line[data-start] {
+    cursor: pointer;
+}
+
+.sp-line[data-start]:hover {
+    background: var(--panel-2);
+}
+
+.sp-line.on {
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    background: rgba(91, 157, 255, .12);
+}
+
+.sp-bar {
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+    padding: 8px 16px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sp-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.sp-icon {
+    width: 34px;
+    height: 30px;
+    font-size: 14px;
+    line-height: 1;
+}
+
+/* 进度条占满剩余宽度，覆盖 input[type=range] 的固定 130px */
+.sp-seek {
+    flex: 1;
+    width: auto;
+    min-width: 160px;
+}
+
+/* 音量条在进度条右侧，收窄一点（默认 range 是 130px） */
+.sp-vol {
+    width: 90px;
+}
+
+/* 音量条左边那串「喇叭 + 百分比」：数字位数变了（100% → 9%）也不许把右边的条推着走，
+   所以给个固定下限、内容右对齐（喇叭在数字左边，随数字宽度略动，看着仍是贴着数字的） */
+.sp-vol-label {
+    min-width: 62px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.sp-rate.on {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(91, 157, 255, .12);
+}
+
+/* ---------- 歌曲页 / 打分页 ---------- */
+/* 页签条（打分页与各编辑弹窗内部的切换共用一套样子） */
+.tabs {
+    margin-bottom: 12px;
+}
+
+.tab.on {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(91, 157, 255, .12);
+}
+
+/* 打分页一屏一组，组名给大一号 */
+.song-head {
+    margin: 10px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.song-head-main {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+/* 五挡分数按钮：打分是连着做几十组的动作，键位大一点少点错 */
+.score-pad {
+    margin-top: 8px;
+}
+
+.score-pad .score-btn {
+    min-width: 62px;
+    height: 38px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* 统计页的倍速输入框，比默认窄 */
+.rate-input {
+    width: 76px;
+}
+
+/* 倍速单元格：不用 .row 的 flex（它会把 td 从 table-cell 变成 flex，
+   后面再接一列模板时就会错位到下一行），改 nowrap + 间距保持一行 */
+.rate-cell {
+    white-space: nowrap;
+}
+
+.rate-cell input,
+.rate-cell button {
+    margin-right: 6px;
+}
+
+/* ---------- 歌曲模块重构（列表分页 / 随机播放 / 播放浮层改造） ---------- */
+
+/* 分页条：首页/上一页/页码/下一页/末页 + 「共 N 条」 */
+.pager {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.pager button {
+    min-width: 30px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.pager button.on {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(91, 157, 255, .12);
+    font-weight: 600;
+}
+
+.pager-gap {
+    color: var(--text-dim);
+    padding: 0 2px;
+}
+
+/* 可排序表头：给手型，hover 提示这一列能点 */
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+th.sortable:hover {
+    color: var(--text);
+}
+
+/* 播放浮层：歌词栏显隐（隐藏后画面区吃满） */
+.sp-lyric.hidden {
+    display: none;
+}
+
+/* 歌词栏顶部的显隐开关行，独立于歌词文件切换（后者在 sp-lyric-head 里） */
+.sp-lyric-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.sp-lyric-ctrl button {
+    padding: 2px 8px;
+    font-size: 12px;
+}
+
+/* 版本切换下拉：长文件名别把头部撑爆 */
+.sp-variant {
+    max-width: 220px;
+}
+
+/* 随机播放来源勾选（歌曲页分区 / 未归档页子目录） */
+.shuffle-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.shuffle-item input {
+    accent-color: var(--accent);
+}
+
+/* 编辑弹窗：页签内容区与输入框 */
+.modal-tab {
+    margin-top: 12px;
+}
+
+.modal-input {
+    width: 100%;
+}
+
+.modal-variant {
+    margin: 0 0 8px;
+    word-break: break-all;
+}
+
+/* plan 清单里「现名 → 目标名」一行，长名不截断 */
+.modal-plan-title {
+    margin: 0 0 8px;
+    word-break: break-all;
+}
+
+/* ---------- 原曲文件框（原曲页「新增原曲」/「编辑」共用那个表单） ----------
+   八个类别各一个框（2026-09-25 起；原先是一排七类下拉的那种 .tpl-row 布局，已删）：
+   左边类别名、中间文件名、「已确认」勾选框、右边几个行内按钮（选择 / 取消选中 /
+   播放 / 移入冗余），下面一行小字是「改名为：…」。
+   八个框按播放行为分成三组（原曲+歌词 / 伴奏+人声+样例+样例歌词 / mid+工程），
+   组头上那一行说明是后端下发的。 */
+.sof-box {
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 6px 8px;
+    margin-bottom: 6px;
+}
+
+/* 分组说明那一行：一句话讲清这一组的播放键会放什么（文字取自后端的 groupLabel）。
+   第一组不画上边框，后面每组一条细线隔开，免得三行说明糊在一起 */
+.sof-group {
+    color: var(--text-dim);
+    font-size: 12px;
+    margin: 10px 0 4px;
+}
+
+.sof-group:not(:first-child) {
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+}
+
+.sof-box-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 类别名固定宽度：八个框左边对齐，扫一眼就知道哪一格是哪一类 */
+.sof-box-label {
+    flex: 0 0 60px;
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+/* 行内按钮组：不换行、不缩、贴右边 */
+.sof-acts {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto;
+}
+
+/* 原曲行内的六类素材简略标记：有则蓝、无则灰。td 本身保持表格单元格，
+   六类标记放进内层 span 用 inline-flex 横排，不覆盖 table-cell 布局 */
+.tpl-cell {
+    white-space: nowrap;
+}
+
+.tpl-flags {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-right: 6px;
+}
+
+/* span（无文件、不可点）与 button（有文件、可点）必须是同一个盒子尺寸：
+   button 的 UA 样式自带 font / padding / border / box-sizing，逐项显式覆盖。
+   注意**不要**用 font: inherit —— 它会把 font-size 重置成 td 的继承值（比 11px 大），
+   有文件的按钮就比灰的大一圈。 */
+.tpl-flag {
+    display: inline-block;
+    box-sizing: border-box;
+    padding: 0 4px;
+    border-radius: 3px;
+    font-size: 11px;
+    line-height: 1.6;
+    font-family: inherit;
+    border: 1px solid var(--border);
+    color: #5a6373;
+    white-space: nowrap;
+}
+
+.tpl-flag.on {
+    color: var(--accent);
+    border-color: rgba(91, 157, 255, .45);
+    background: rgba(91, 157, 255, .12);
+}
+
+/* 可点击的素材标记（原/词/伴/声）：button 去掉原生底色、给手型。
+   尺寸 / 字体全部继承 .tpl-flag，这里只改颜色与光标 */
+.tpl-flag.tpl-act {
+    cursor: pointer;
+    background: transparent;
+}
+
+.tpl-flag.tpl-act.on {
+    background: rgba(91, 157, 255, .12);
+}
+
+/* 有内容但未确认（check=0）的素材标记（原曲 / 歌词）：警示色，提醒还需人工确认。
+   放 .on / .tpl-act.on 之后，确保同优先级下未确认态压过有/无态 */
+.tpl-flag.unconfirmed,
+.tpl-flag.tpl-act.unconfirmed {
+    color: var(--warn);
+    border-color: rgba(210, 153, 34, .45);
+    background: rgba(210, 153, 34, .12);
+}
+
+/* 歌手列「有内容但未确认」：警示色文字 */
+.check-unconfirmed {
+    color: var(--warn);
+}
+
+/* 表单里那种「勾选框 + 一句话」的行：原曲页工具条的「仅待确认」、
+   原曲文件的「按规范改名 / 歌手已确认」都用它 */
+.tpl-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+/* 模板歌词查看浮层 */
+.tpl-lyric {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.tpl-lyric-line {
+    padding: 2px 0;
+    line-height: 1.7;
+    border-bottom: 1px dashed var(--border);
+}
+
+/* ---------- 填词页（填词工具设计 4） ---------- */
+.fill-path {
+    word-break: break-all;
+    margin-top: 4px;
+}
+
+.fill-align {
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+/* 分句质量提示（后端 LyricFillAligner#noticeOf 拼好的那句话）：与「待重启」那类提示同色 ——
+   它说的是「这一页的结果可能不准，去核对一下」，不是错误、也不拦任何操作 */
+.fill-notice {
+    color: var(--warn);
+}
+
+/* 轨选择条：既是勾选控件，也是槽位条的颜色图例 */
+.fill-tracks {
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.fill-track {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.fill-track.on {
+    border-color: var(--accent);
+    background: rgba(91, 157, 255, .10);
+}
+
+.fill-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.fill-lines {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 每句一块卡片：间距拉开 + 描边，免得「并入上一句」被看成上一行的操作 */
+.fill-line {
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, .02);
+}
+
+.fill-line:last-child {
+    margin-bottom: 0;
+}
+
+.fill-line-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 计数靠右：已填 / 需填，不相等时标黄（软提示，不拦保存） */
+.fill-count {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.fill-count.fill-bad {
+    color: var(--warn);
+}
+
+/* 填词项目列表：点每行末的「编辑」打开那一份填词 */
+.fill-list {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.fill-list th,
+.fill-list td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+}
+
+.fill-list th {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+}
+
+/* 行本身不再可点（2026-09-30：进入编辑器走行末的「编辑」按钮），
+   所以没有 cursor: pointer；hover 高亮留着，看行方便 */
+.fill-row {
+    cursor: default;
+}
+
+.fill-row:hover {
+    background: rgba(255, 255, 255, .04);
+}
+
+/* 填词名输入 —— 这一页的主标题：一份填词的「身份」就是它，比上面那行原曲名更该先入眼。
+   宽度写在 .fill-name-title 上而不是 `.fill-projects input[type="text"]`：后者的特异度是
+   (0,2,1)，会盖掉新类 (0,1,0) 的 width（改了字号却不动宽度的经典来路）。 */
+.fill-projects {
+    margin-top: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.fill-name-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fill-name-title {
+    width: 320px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.fill-name-title:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+/* 一句两行格子共用一个 grid 的列模板（repeat(N, minmax(2ch, max-content))，由行内 style
+   给出）：列宽由两行里更宽的那格决定，所以原词行与填写行永远左右对齐，不靠字体度量去猜。
+   等宽字体 + 每格至少 2ch（一个汉字宽），中文原词与填写格里同位置的字也就对齐了；
+   英文格按内容宽度，本来就对不齐。 */
+.fill-grid {
+    display: grid;
+    gap: 2px 0;
+    margin-top: 6px;
+    /* 空位带：格子**上方**留出来的 10px（加空位 / 删空位在那一带里点，见 .fill-gap-hit）。
+       用 padding 而不是负 top，热区就一定落在 grid 自己的盒子里，不压到上一行、
+       也不跟 .fill-voice-head 抢点击。 */
+    padding-top: 10px;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+    font-size: 15px;
+}
+
+/* 原词行的一格：**永远显示原词**，不随填写变化。点它（尤其点 `-`）把光标送到填写行
+   对应的格子。
+   这一排是「参考行」：**灰**底 + 暗字 + 不画框（画了框就和下排的输入框长成一个样），
+   轨的身份只用朝下沿的一条细色线表示 —— 与填写行的蓝正好是两种颜色。 */
+.fill-slot {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2ch;
+    line-height: 1.7;
+    text-align: center;
+    border-radius: 2px 2px 0 0;
+    background: rgba(255, 255, 255, .05);
+    box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--c, #888) 50%, transparent);
+    color: var(--text-dim);
+    cursor: text;
+}
+
+/* 这一格已经填了新词 —— 原词行本身不变，只是底色压深、字亮起来，让「哪些格已经
+   覆盖了」一眼可见。**不换色**：蓝色是填写行「这一格是我写的」的记号，两排撞色就
+   又分不清了（轨 #0 的色本来就是蓝的）。 */
+.fill-slot.filled {
+    background: rgba(255, 255, 255, .16);
+    color: var(--text);
+}
+
+/* 视觉空位：歌词句内的空格（拼音模板匹配时透出），不占槽位、不能填、不断句，
+   只是撑开一列空当（列宽由 grid-template 的行内 1ch 决定），不画框。
+   原词行那一半（.click）可点 = 消除这个空位；填写行那一半一律不接事件。 */
+.fill-gap {
+    pointer-events: none;
+    position: relative;   /* 空位带上的 ␣ 以它为定位父元素 */
+}
+
+.fill-gap.click {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.fill-gap.click:hover {
+    background: rgba(255, 255, 255, .12);
+}
+
+/* 空位带上的热区：绝对定位在**这一列的左缘**，正好压在它与前一格的缝上（不占布局宽度，
+   否则每列都往右偏一点、对齐就没了）；高度是 grid 的 padding-top，所以热区不会盖住字、
+   也不与格子里的事件打架。平时透明，悬停才显 +；已有的空位（.on）常驻 ␣。 */
+.fill-gap-hit {
+    position: absolute;
+    left: -5px;
+    top: -10px;
+    width: 10px;
+    height: 10px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-size: 11px;
+    line-height: 10px;
+    text-align: center;
+    cursor: pointer;
+    opacity: 0;
+}
+
+.fill-slot:hover .fill-gap-hit,
+.fill-gap:hover .fill-gap-hit {
+    opacity: .45;
+}
+
+.fill-gap-hit:hover {
+    opacity: 1;
+}
+
+.fill-gap-hit.on {
+    opacity: .6;
+}
+
+/* 延音：不占字数，点一下光标才落到填写行对应格子。虚线框是它独有的记号 ——
+   原词行别的格都不画框，看到虚线框就知道「这里是个 `-`，可以点进去填个字」 */
+.fill-slot.dash {
+    color: var(--text-dim);
+    background: transparent;
+    box-shadow: none;
+    outline: 1px dashed var(--border);
+    outline-offset: -1px;
+    cursor: pointer;
+}
+
+.fill-slot.dash:hover {
+    color: var(--accent);
+    outline-color: var(--accent);
+}
+
+/* 换气（br）：与延音同族的「不自动填」格 —— 不占字数、不进歌词，点进去手动填的字只进
+   回填文本。点线框区别于延音的虚线框（看到点线框就知道这里是 br，换气位） */
+.fill-slot.breath {
+    color: var(--text-dim);
+    background: transparent;
+    box-shadow: none;
+    outline: 1px dotted var(--border);
+    outline-offset: -1px;
+    cursor: pointer;
+}
+
+.fill-slot.breath:hover {
+    color: var(--accent);
+    outline-color: var(--accent);
+}
+
+/* 静音占位（0）：与延音 / 换气同族的「不自动填」格 —— 不占字数、不进歌词，点进去手动填的
+   字只进回填文本。双线框区别于延音的虚线框 / 换气的点线框；框里的字本身也写着 `0` */
+.fill-slot.zero {
+    color: var(--text-dim);
+    background: transparent;
+    box-shadow: none;
+    outline: 3px double var(--border);
+    outline-offset: -2px;
+    cursor: pointer;
+}
+
+.fill-slot.zero:hover {
+    color: var(--accent);
+    outline-color: var(--accent);
+}
+
+/* 喉塞音（svp 里 '曾 一类，前缀撇号是音符的发音标记）：原词行左上角小撇号提示 ——
+   导出回填文本自动带 ' 前缀（SynthV 保持喉塞起音），lrc 歌词不带 */
+.fill-slot.glottal::before {
+    content: "'";
+    position: absolute;
+    top: 0;
+    left: 1px;
+    font-size: 10px;
+    line-height: 1;
+    color: var(--text-dim);
+}
+
+/* 填写行的一格 = **输入框**：上排是没框的色块，这排每格都有一道看得见的框，
+   一眼就知道该往哪写。全局 input[type="text"]（优先级 0,1,1）会盖掉单类选择器，
+   所以这里用 .fill-grid .fill-cell（0,2,0）提权，并把 padding / border / background
+   三项显式覆盖回来。size="1" 是必须的：不写的话 input 的固有宽度约 20ch，会把列撑爆。 */
+.fill-grid .fill-cell {
+    width: 100%;
+    min-width: 2ch;
+    padding: 2px 0;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 0 0 2px 2px;
+    /* 空着的填写格是个「凹槽」（比面板还暗）：一眼看出这里能写，
+       也就不会和上排那块凸出来的灰色原词块混起来 */
+    background: rgba(0, 0, 0, .22);
+    color: var(--text);
+    font-family: inherit;
+    font-size: inherit;
+    line-height: 1.7;
+    text-align: center;
+    outline: none;
+}
+
+.fill-grid .fill-cell::placeholder {
+    color: var(--text-dim);
+    opacity: .5;
+}
+
+/* 已填：蓝底 + 蓝框 —— 「这一格是我写的」这个记号只出现在填写行（原词行的已覆盖是
+   轨色压深 + 下沿实线，两排不会撞在一起） */
+.fill-grid .fill-cell.on {
+    color: var(--text);
+    background: rgba(91, 157, 255, .24);
+    border-color: var(--accent);
+}
+
+/* 还没点开的延音格：留着 `-` 的底子，点进去填字就成了新的音 */
+.fill-grid .fill-cell.dash {
+    opacity: .7;
+}
+
+/* 还没手填的换气格：与延音格同款弱化；填了字就亮成普通的已填格（值只进回填文本） */
+.fill-grid .fill-cell.breath {
+    opacity: .7;
+}
+
+/* 还没手填的静音占位格：同款弱化；同理，填了字就亮成普通的已填格 */
+.fill-grid .fill-cell.zero {
+    opacity: .7;
+}
+
+/* 填写行的喉塞音标记：挂在包装格左上角（input 自己画不了伪元素），不占列宽不接事件 */
+.fill-cell-wrap.glottal::before {
+    content: "'";
+    position: absolute;
+    top: -1px;
+    left: 1px;
+    font-size: 10px;
+    line-height: 1;
+    color: var(--text-dim);
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* ============ 声部组（合唱 / 和声）与整行填写框 ============ */
+
+/* 一句里的一个声部组：合唱句有多组，每组一行「原词 + 填写框」 */
+.fill-voice {
+    margin-top: 6px;
+}
+
+/* 组头：这行是哪个（些）轨，以及「空格自动抄另一组」的提醒 */
+.fill-voice-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.fill-voice-tag {
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+/* 括号声部（原歌词「A（B）」里括号那句）：整行换个色调，与主声部一眼可分 */
+.fill-voice.bracket .fill-voice-tag {
+    color: var(--warn);
+}
+
+.fill-voice.bracket .fill-slot {
+    box-shadow: inset 0 -2px 0 rgba(255, 176, 32, .55);
+}
+
+/* 句头这一句的歌词（填的词 → 默认词 → 原词，双声部拼成 A（B））：灰字，随键入实时刷新 */
+.fill-line-lyric {
+    font-size: 12px;
+    color: var(--text-dim);
+    opacity: .85;
+    max-width: 42ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 拖选中的填写格：像选中一段文本一样高亮（mousedown 扫过、打字整段替换 / 删除）。
+   必须写在 .fill-cell.on 之后：两条选择器优先级相同（0,3,0），靠先后定胜负 ——
+   早先漏了这一点，选区被后面的 background 盖掉，拖选看着只有起点那一格被选中。 */
+.fill-grid .fill-cell.sel {
+    background: rgba(91, 157, 255, .45);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+    color: var(--text);
+}
+
+/* 拼音模板：可填但没匹配到汉字的格（红点角标提示），填了字就消除 */
+.fill-cell.unmatched {
+    box-shadow: inset 0 -2px 0 rgba(255, 99, 99, .8);
+}
+
+.fill-cell.unmatched::placeholder {
+    color: rgba(255, 120, 120, .85);
+}
+
+/* 多音字：橙色虚线底边提醒（软提示） */
+.fill-cell.poly {
+    box-shadow: inset 0 -2px 0 rgba(255, 176, 32, .9);
+}
+
+/* 弱多音字：只剩一个常用读音、别的都是古音 / 冷门音（几乎唱不错）—— 同色系压暗，只当个记号 */
+.fill-cell.poly-weak {
+    box-shadow: inset 0 -2px 0 rgba(255, 176, 32, .38);
+}
+
+/* 回填替换已选：绿色底边（导出回填用这个字，歌词本体不变） */
+.fill-cell.swapped {
+    box-shadow: inset 0 -2px 0 rgba(72, 199, 142, .9);
+}
+
+/* ---------- 多音字候选：常显在字下 ---------- */
+
+/* 候选字挂在填写格正下方（absolute 不占列宽）；句间留了间距不遮下一句 */
+.fill-cell-wrap {
+    position: relative;
+    display: block;
+}
+
+.cell-poly-suggest {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    display: flex;
+    gap: 3px;
+    margin-top: 1px;
+    z-index: 5;
+    white-space: nowrap;
+}
+
+.cell-poly-chip {
+    padding: 0 4px;
+    border: 1px solid rgba(255, 176, 32, .55);
+    border-radius: 3px;
+    background: rgba(255, 176, 32, .10);
+    color: var(--text-dim);
+    font-size: 11px;
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+.cell-poly-chip:hover {
+    color: var(--text);
+    border-color: var(--accent);
+}
+
+/* 已选中的回填替换字：实底高亮 */
+.cell-poly-chip.on {
+    background: rgba(72, 199, 142, .22);
+    border-color: rgba(72, 199, 142, .9);
+    color: var(--text);
+}
+
+/* 多音字：橙色虚线底边提醒（软提示，悬浮看建议换字），不拦保存 */
+.fill-grid .fill-cell.poly {
+    border-bottom: 2px dashed var(--warn);
+}
+
+/* 弱多音字：同一道虚线，颜色压到 40% —— 看得出「这里有记号」，但不会像醒目那样抢眼 */
+.fill-grid .fill-cell.poly-weak {
+    border-bottom: 2px dashed rgba(210, 153, 34, .4);
+}
+
+/* 多音字建议换字浮层：填的是多音字时浮在格子下方，点字直接填入当前格 */
+#f-poly-chips {
+    position: absolute;
+    z-index: 40;
+    display: none;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+#f-poly-chips .poly-tip {
+    color: var(--warn);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+#f-poly-chips .poly-chip {
+    min-width: 26px;
+    padding: 1px 6px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+#f-poly-chips .poly-chip:hover:not(:disabled) {
+    border-color: var(--warn);
+    color: var(--warn);
+}
+
+.fill-grid .fill-cell:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+/* 断开点：绝对定位在格子左缘，不占布局宽度（否则每格都往右偏一点，对齐就没了）。
+   平时透明，悬停时才显出来，免得整行都是竖线。 */
+.fill-slot .fill-split {
+    position: absolute;
+    left: -4px;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--border);
+    font: inherit;
+    line-height: inherit;
+    cursor: pointer;
+    opacity: 0;
+}
+
+.fill-slot:hover .fill-split {
+    opacity: 1;
+}
+
+.fill-slot .fill-split:hover {
+    color: var(--accent);
+}
+
+/* 导出浮层里每一份文本 */
+.fill-export {
+    margin-bottom: 10px;
+}
+
+.fill-textarea {
+    width: 100%;
+    font-family: Consolas, Menlo, monospace;
+    font-size: 12px;
+    resize: vertical;
+}
+
+/* ==================== 韵脚查询组件（韵脚词典页查询页签 + 填词页右栏，js/rhymequery.js） ====================
+   选择器一律写全（`.rh-groups .rh-chip` 这种），状态类按「空 → .on」的先后排 ——
+   填词工具设计 §13 第 38 条：同优先级比先后，状态类被基类盖掉时界面上一点反馈都没有。
+   这一块是文件末尾的新分区，只在这几行里加东西，别去动上面的填词页 / 韵脚面板分区。 */
+
+/* ---------- 查询控件条（compact 时折成两行，给填词页右栏那种窄栏） ---------- */
+.rh-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.rh-bar-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+/* compact：右栏窄，两行强制上下排（只有传 compact 才折，pickOnly 不隐含布局） */
+.rh-bar.rh-bar-compact {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.rh-bar.rh-bar-compact .rh-bar-line {
+    width: 100%;
+    gap: 6px;
+}
+
+.rh-bar #rh-anchor {
+    width: 220px;
+}
+
+.rh-bar #rh-q {
+    width: 110px;
+}
+
+.rh-bar.rh-bar-compact #rh-anchor {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+}
+
+.rh-bar.rh-bar-compact #rh-q {
+    width: 90px;
+}
+
+/* ---------- 来源多选（按钮 + 下拉面板；五个来源平铺会撑破填词页右栏） ---------- */
+.rh-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.rh-multi {
+    position: relative;
+    display: inline-block;
+}
+
+.rh-multi-panel {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 120px;
+    padding: 8px 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .4);
+}
+
+.rh-multi-panel[hidden] {
+    display: none;
+}
+
+.rh-multi-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.rh-multi-panel #rh-src-clear {
+    margin-top: 2px;
+}
+
+/* 撑开：把按钮 / 外链推到行尾 */
+.rh-spacer {
+    flex: 1 1 auto;
+}
+
+.rh-note {
+    margin: 0 0 10px;
+    line-height: 1.5;
+}
+
+/* ---------- 页脚工具条（运维按钮一行）与顶部外链 ---------- */
+.rh-ops {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+}
+
+/* 两个外链算一组：整组一起换行，别一个在行尾一个在下一行 */
+.rh-links {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* 宽工具条（词典页查询页签）上的外链：**推到整条 bar 的最右边**，并用一条细竖线
+   与左边的操作按钮断开（用户 2026-09-15：「放到右边，和操作按钮隔开」）。
+   为什么不能靠行内的 `.rh-spacer`：`.rh-bar-line` 是内容宽度，spacer 在里面没有可分的
+   空间，所以「新增 / 改词性 / 删除 / 外链」是紧挨着关键字排在行中间的（实测 1920 屏上
+   外链止于 x=1248，而这一行能到 1863）—— 于是外链压根没到右边。
+   所以外链在宽工具条上**不放在 `.rh-bar-line` 里**，而是 `.rh-bar` 的直接子项（见
+   `rhymequery.js` 的 `shellHtml`），这里用 `margin-left:auto` 把它顶到最右。
+   compact（填词页右栏）不走这条：那边外链仍在第二行里，跟着关键字排。 */
+.rh-bar > .rh-links {
+    margin-left: auto;
+    padding-left: 14px;
+    border-left: 1px solid var(--border);
+}
+
+.rh-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 12px;
+    text-decoration: none;
+}
+
+.rh-link:hover {
+    border-color: var(--accent);
+}
+
+/* ---------- 页签组件：顶层「查询 / 韵部总表」与结果区一级块共用一套样子 ----------
+   2026-09-15 重新设计。选中的那一页**只有一条 2px 下划线是蓝的** —— 原来用 `btn-primary`
+   实心蓝底（顶层）与「蓝边 + 蓝字 + 顶上再压一条蓝」双重强调（一级块），两个叠在一起
+   整页发蓝，用户反馈「蓝色太突兀」。现在未选中一律无边框、暗字，选中才抬底色 + 亮字。 */
+.rh-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 2px;
+    border-bottom: 1px solid var(--border);
+}
+
+.rh-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    padding: 5px 12px 6px;
+    border: none;
+    border-radius: var(--radius) var(--radius) 0 0;
+    background: transparent;
+    color: var(--text-dim);
+    font: inherit;
+    line-height: 1.3;
+    cursor: pointer;
+    /* 未选中也占住这 2px，选中时才有「底线亮起来」而不是「整块跳一下」 */
+    box-shadow: inset 0 -2px 0 transparent;
+}
+
+.rh-tab .rh-tab-key {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.rh-tab .rh-tab-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.rh-tab:hover {
+    background: var(--panel-2);
+    color: var(--text);
+}
+
+/* 选中：压住基类与 :hover（顺序放最后，见本分区抬头那条注意）。整页唯一的蓝就是这条下划线 */
+.rh-tab.on {
+    background: var(--panel-2);
+    color: var(--text);
+    box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* 顶层页签那一行尾部的说明文字（不是页签，别让它被当成一个 tab 撑开） */
+.rh-tabs .rh-tab-note {
+    align-self: center;
+    margin-left: 10px;
+}
+
+/* ---------- 结果区：一级块（韵）/ 二级块（词性）/ 方块 ---------- */
+.rh-groups .rh-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.rh-groups .rh-tabs {
+    margin-top: 10px;
+}
+
+/* ---------- 一级块表头：选中的那一组的「韵母 / 韵身 / 十八韵」，一条醒目横条 ----------
+   左侧那 3px 竖线是这块唯一的蓝；值用亮字加粗，蓝字留给页签下划线一处就够了 */
+.rh-groups .rh-block {
+    margin-top: 10px;
+}
+
+.rh-groups .rh-block-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 7px 12px;
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    background: var(--panel-2);
+}
+
+.rh-groups .rh-block-title {
+    font-size: 14px;
+}
+
+.rh-groups .rh-block-title b {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.rh-groups .rh-block-title .rh-key {
+    color: var(--text-dim);
+    font-size: 12px;
+}
+
+/* ---------- 二级块（词性） ----------
+   2026-09-15 重做：原来词性是个「圆角药丸」（有边框 + 底色 + 圆角），与下面的字词方块
+   （也有边框 + 底色）长得几乎一样，扫下来只看见一片方框，用户反馈「词性又和下面的字词
+   混成一团」。现在词性**不当盒子**：一根小竖条 + 亮字 + 一条拉到行尾的细线，成组头；
+   方块才是盒子。两层各自的样子互相不撞。 */
+.rh-groups .rh-sub {
+    margin-top: 16px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+/* 紧跟块头的第一个二级块不再画分隔线（它是表头的直属内容，不是「下一组」） */
+.rh-groups .rh-block-head + .rh-sub {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
+.rh-groups .rh-sub-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 7px;
+}
+
+.rh-groups .rh-sub-head .rh-wc {
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .5px;
+    color: var(--text);
+}
+
+.rh-groups .rh-sub-head .rh-wc::before {
+    content: '';
+    width: 3px;
+    height: 11px;
+    margin-right: 6px;
+    border-radius: 1px;
+    background: var(--text-dim);
+}
+
+/* 行尾那条细线：把「这一组从哪儿到哪儿」画出来，也是相邻两个词性块的第一道分界 */
+.rh-groups .rh-sub-head::after {
+    content: '';
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--border);
+}
+
+.rh-groups .rh-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+/* 方块：正面只有 字/词 + 频次，读音与来源在 title 里（hover 才出）。
+   圆角比组头那根竖条明显，一眼能分出「这是可点的词、那是组名」 */
+.rh-groups .rh-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    padding: 3px 9px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--panel-2);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.rh-groups .rh-chip .muted {
+    font-size: 11px;
+}
+
+/* 现代规范字表：后端拒删，画成不可选（判定仍在后端，前端只是不让选） */
+.rh-groups .rh-chip.rh-fixed {
+    cursor: default;
+    opacity: .62;
+    border-style: dashed;
+}
+
+.rh-groups .rh-chip:hover {
+    border-color: var(--accent);
+}
+
+/* 勾选态：id 会进 DELETE /entries 的 ids。排在基类与 :hover 之后才压得住 */
+.rh-groups .rh-chip.on {
+    border-color: var(--accent);
+    background: rgba(91, 157, 255, .18);
+    color: var(--accent);
+}
+
+/* ---------- 翻页条（2026-09-15 取代「显示更多 30 个」） ---------- */
+.rh-groups .rh-pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.rh-groups .rh-pager .rh-page {
+    padding: 2px 10px;
+    font-size: 12px;
+}
+
+.rh-groups .rh-pager .rh-page[disabled] {
+    opacity: .4;
+    cursor: default;
+}
+
+/* ---------- 新增弹窗的多行输入 ---------- */
+.rh-add-text {
+    width: 100%;
+    margin: 8px 0;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 12px;
+    resize: vertical;
+}
+
+/* ==================== 填词页右栏（韵脚词典 / AI 填词；替换旧悬浮韵脚面板） ====================
+   选择器一律写全（`.fill-page .fill-side .fill-side-tab.on` 这种），状态类按「空 → .on → .sel」
+   的先后排 —— 填词工具设计 §13 第 38 条：同优先级比先后，状态类被基类盖掉时界面上一点反馈都没有。
+   这一块是文件最末尾的新分区，只在这几行里加东西，别回头去动上面的填词页分区。 */
+
+/* ---------- 页面骨架：编辑器 + 右栏（一行两列） ---------- */
+.fill-page {
+    display: flex;
+    align-items: flex-start;   /* 不拉伸：右栏的 sticky 才有活动余地 */
+    gap: 12px;
+}
+
+.fill-page .fill-main {
+    flex: 1 1 auto;
+    min-width: 0;   /* 少了这句，方案表的最小宽度会把编辑器顶出去 */
+}
+
+/* ---------- 右栏外壳：折叠 = 只剩右边缘一条竖开关 ---------- */
+.fill-page .fill-side {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row-reverse;   /* 开关永远贴右边缘，展开时面板往左长 */
+    align-items: flex-start;
+    gap: 8px;
+    position: sticky;   /* 长句子往下滚时右栏跟住（与左侧导航同一个做法） */
+    top: 12px;
+    z-index: 20;
+}
+
+.fill-page .fill-side .fill-side-toggle {
+    width: 32px;
+    padding: 12px 2px;
+    writing-mode: vertical-rl;
+    letter-spacing: 4px;
+    font-size: 12px;
+    line-height: 1.2;
+    color: var(--text-dim);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+.fill-page .fill-side .fill-side-toggle:hover {
+    color: var(--text);
+    border-color: var(--accent);
+}
+
+.fill-page .fill-side.on .fill-side-toggle {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.fill-page .fill-side .fill-side-body {
+    display: none;
+}
+
+.fill-page .fill-side.on .fill-side-body {
+    display: flex;
+    flex-direction: column;
+    width: clamp(320px, 30vw, 560px);
+    max-height: calc(100vh - 24px);
+    overflow: auto;
+    padding: 10px 12px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+/* ---------- 页签条 ---------- */
+.fill-page .fill-side .fill-side-tabs {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.fill-page .fill-side .fill-side-tab {
+    padding: 5px 12px;
+    font-size: 13px;
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+.fill-page .fill-side .fill-side-tab:hover {
+    color: var(--text);
+    border-color: var(--accent);
+}
+
+.fill-page .fill-side .fill-side-tab.on {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--panel);
+}
+
+/* 两页签都留在 DOM 里，靠 .on 切显隐 —— 切页签不重画内容（不丢已填 / 已生成的草稿） */
+.fill-page .fill-side .fill-side-pane {
+    display: none;
+    min-width: 0;
+}
+
+.fill-page .fill-side .fill-side-pane.on {
+    display: block;
+}
+
+/* ---------- AI 页签 ---------- */
+.fill-page .fill-side .fill-ai-modes {
+    gap: 12px;
+}
+
+.fill-page .fill-side .fill-ai-theme {
+    display: block;
+    margin: 8px 0 6px;
+}
+
+.fill-page .fill-side .fill-ai-bulk {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.fill-page .fill-side .fill-ai-bulk select {
+    max-width: 140px;
+    font-size: 12px;
+}
+
+.fill-page .fill-side .fill-ai-actions {
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.fill-page .fill-side .fill-ai-hint {
+    margin-top: 6px;
+}
+
+/* 高级：自己占一行、左对齐（原先在 .row 里挂 margin-left:auto，被挤到右边看着像错位） */
+.fill-ai-adv > summary {
+    list-style: none;
+    margin-left: 0;
+    cursor: pointer;
+}
+
+.fill-ai-adv > summary::-webkit-details-marker {
+    display: none;
+}
+
+.fill-ai-adv > .fill-ai-adv-grid {
+    /* 换行流式排（原来是 repeat(3, max-content)：三列的 max-content 宽度在 320~460px 的
+       窄栏里加起来必然超出，撑出右栏的横向滚动条，一滚连方案表一起漂） */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+/* ---------- AI 方案表：320~560px 的窄栏里也要读得下去 ----------
+   ① 字体小一号；② 原句 / 尾词单行省略（全文挂 title）；③ 外面 overflow:auto 兜底横向滚。
+   固定表格布局 + 列宽写在表头，窄栏时是「列不再被压缩 + 横向滚」，
+   而不是被内容（下拉的选项文本）把面板撑破。
+
+   **九列全部写死宽度，一列都不留弹性**（2026-09-14 修）：fixed 布局会把「没写 width
+   的列」平分剩余宽度。原句列与填词列原先都没写，于是宽栏里这两列白占一大片
+   （1920 屏约各 141px），同时韵列 78px 连「十六唐 ang」+ 下拉箭头都放不下（要 ~88px）、
+   尾词 44px 放不下 4 字、行号 20px 放不下 3 位 —— 屏幕上就是「每行右侧显示不全」，
+   而原句列反而空着。现在每列按内容实际需要定宽，表的 min-width = 九列之和：
+   容器比它宽就按比例摊余量（各列一起宽一点，不突出一列），比它窄就横滚。 */
+.fill-page .fill-side .fill-ai-tablewrap {
+    margin-top: 4px;
+    /* 按视口高度放开（原来是死值 42vh，行多的歌只能看到十来行）：
+       上方的模式 / 主题与下方的批量 / 应用 / 高级按实际高度让位，
+       剩下的都给表；真放不下时同一个滚动区里纵滚、窄栏时横滚都走这里。 */
+    max-height: max(220px, calc(100vh - 360px));
+    overflow: auto;
+    overscroll-behavior: contain;   /* 滚到头别把右栏一起带着滚 */
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.fill-page .fill-side .fill-ai-table {
+    width: 100%;
+    /* = 下面九列之和。**必须 ≥ 列之和**：小于它时 fixed 布局会按比例压缩各列，
+       把「内容显示不全」又带回来；等于它时是「容器够宽就摊余量、不够宽就横滚」。
+       右栏内容区的上限是 532px（`clamp(320px, 30vw, 560px)` 减 padding 与边框），
+       所以 554 > 532 意味着**任何窗口宽度下都有横向滚动条** —— 这是要的：
+       九列本来就塞不进 320~560px 的窄栏，滚着看全，好过把九列压到都显示不全。 */
+    min-width: 554px;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 11px;
+}
+
+.fill-page .fill-side .fill-ai-table th,
+.fill-page .fill-side .fill-ai-table td {
+    padding: 3px 4px;
+    text-align: left;
+    white-space: nowrap;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border);
+    /* 兜底：万一将来哪一列又定窄了，超出的部分显示省略号（全文仍可从 title 看），
+       而不是像没有这两条时那样**画到隔壁格子上** —— 那看着就是「显示不全」。
+       （2026-09-14：末两列的表头「字数匹配」就是这么串出去的，根因是列宽只按内容算、
+       漏了表头文字，见上面列宽那段注释。） */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fill-page .fill-side .fill-ai-table th {
+    position: sticky;   /* 行多了以后表头跟着滚 */
+    top: 0;
+    z-index: 1;
+    background: var(--panel-2);
+    color: var(--text-dim);
+    font-weight: 500;
+}
+
+/* 列宽 = 「表头文字」与「该列内容」两者需要的较大值（11px 字号下用无头 Chrome 量出来的，
+   见 §15「方案表的列宽修正」）。**容易漏的是表头文字**：末两列的内容只有一个 ✓ / ⚠ / ✗
+   （约 19px），但表头「字数匹配」是 4 个汉字 52px + padding —— 只按内容定成 26px 的话，
+   表头会溢出到隔壁格子上，屏幕上就是「显示不全」。**没有一列写 auto**：写 auto 的那列
+   会吃掉全部剩余宽度、其余列被挤到内容显示不全。
+   选 24 / 句 32（3 位行号）/ 原句 152（约 12 个汉字，全文挂 title）/ 尾词 56（4 字）/
+   字数 32 / 韵 88（「十六唐 ang」+ 下拉箭头）/ 填词 82 / 韵脚 32 / 字数匹配 56，
+   合计 554 = 上面的 min-width。有「韵脚 / 字数匹配」两列时才出现 8、9。 */
+.fill-page .fill-side .fill-ai-table th:nth-child(1) { width: 24px; }
+.fill-page .fill-side .fill-ai-table th:nth-child(2) { width: 32px; }
+.fill-page .fill-side .fill-ai-table th:nth-child(3) { width: 152px; }
+.fill-page .fill-side .fill-ai-table th:nth-child(4) { width: 56px; }
+.fill-page .fill-side .fill-ai-table th:nth-child(5) { width: 32px; }
+.fill-page .fill-side .fill-ai-table th:nth-child(6) { width: 88px; }
+.fill-page .fill-side .fill-ai-table th:nth-child(7) { width: 82px; }
+.fill-page .fill-side .fill-ai-table th:nth-child(8) { width: 32px; }
+.fill-page .fill-side .fill-ai-table th:nth-child(9) { width: 56px; }
+
+/* 原句：定宽，放不下就省略号（全文在 title 里） */
+.fill-page .fill-side .fill-ai-table td.fill-ai-src {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 尾词：句尾那个决定押韵的词，1~4 字，太长也省略（全文在 title 里） */
+.fill-page .fill-side .fill-ai-table td.fill-ai-tail {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-dim);
+}
+
+.fill-page .fill-side .fill-ai-table select.ai-rhyme {
+    width: 100%;
+    min-width: 0;
+    padding: 2px 2px;
+    font-size: 11px;
+}
+
+.fill-page .fill-side .fill-ai-table td.fill-ai-text input.ai-text {
+    width: 100%;
+    min-width: 0;
+    padding: 2px 4px;
+    font-size: 11px;
+    box-sizing: border-box;
+}
+
+.fill-page .fill-side .fill-ai-table td.fill-ai-mark {
+    text-align: center;
+    font-size: 12px;
+}
+
+.fill-page .fill-side .fill-ai-table input.ai-line-pick {
+    margin: 0;
+}
+
+/* 窄屏：右栏展开时整块浮在右侧（不挤压编辑器），开关仍在右边缘 */
+@media (max-width: 1100px) {
+    .fill-page .fill-side.on .fill-side-body {
+        position: fixed;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: min(92vw, 460px);
+        max-height: none;
+        border-radius: 0;
+        border-right: 0;
+        box-shadow: -12px 0 30px rgba(0, 0, 0, .4);
+        z-index: 40;
+    }
+}
+
+/* 文件记录页（#file-ops，导航上叫「文件记录」）：同批次行串底色 + 悬停同批次高亮 + 长路径省略 */
+.fo-batch-a {
+    background: rgba(127, 127, 127, .05);
+    box-shadow: inset 3px 0 0 rgba(127, 127, 127, .25);
+}
+
+.fo-batch-b {
+    box-shadow: inset 3px 0 0 rgba(127, 127, 127, .12);
+}
+
+.fo-hover {
+    background: rgba(255, 200, 90, .18) !important;
+}
+
+.fo-path {
+    word-break: break-all;
+    line-height: 1.5;
+}
+
+.tiny {
+    font-size: 11px;
+}
+
+/* ---------- 使用说明页（#guide） ----------
+   版面：左侧目录（吸顶、可点跳锚点）+ 右侧正文；正文按「章 = 模块 / 节 = 页面」排。
+   窄屏（≤900px）目录折到顶部成一条横排 chips。
+   正文是 md（static/guide/*.md，由 md.js 画成 HTML），所以下面那一段 .md-body 才是
+   真正在排版正文的东西 —— 它按 **GitHub 暗色**的观感写：标题带下边框、行内代码是小胶囊、
+   引用是一条竖线、表格有线、链接是蓝的。加一条 markdown 语法的样式就来这儿加。 */
+.guide-wrap {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+    /* 三级标题各一个颜色，长文里扫一屏就能分出「我读到哪一层了」：
+       章 = 模块（蓝，全页最强的一级）、节 = 页面（亮白）、正文小节 = md 的 `##`（青绿）。
+       这三个是**排版色**，不是状态色 —— 别拿 --ok / --warn / --err 来当标题色，
+       那三个是语义色，混用会让人以为标题在报警。 */
+    --guide-chap: var(--accent);
+    --guide-sec: #e6e8ec;
+    --guide-sub: #79d1c3;
+}
+
+.guide-toc {
+    flex: 0 0 186px;
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow: auto;
+    padding-right: 8px;
+    border-right: 1px solid var(--border);
+}
+
+.guide-toc .toc-chap {
+    margin: 16px 6px 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    /* 与章的标题同色：目录里一眼看出哪几项是一章 */
+    color: var(--guide-chap);
+}
+
+.guide-toc .toc-chap:first-child {
+    margin-top: 0;
+}
+
+.guide-toc a {
+    display: block;
+    padding: 4px 8px;
+    border-radius: var(--radius);
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.guide-toc a.toc-sub {
+    padding-left: 16px;
+}
+
+.guide-toc a:hover {
+    color: var(--text);
+    background: var(--panel);
+}
+
+.guide-toc a.on {
+    color: var(--accent);
+    background: var(--panel-2);
+}
+
+.guide-body {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 章（模块 / 通用页面）与节（页面）。
+   章与章之间拉开一大段：长文里「翻到下一章了」必须一眼看得出来，
+   否则上一章最后一条与下一章第一条挨在一起，读起来还是一整片。 */
+.guide-chapter {
+    margin-top: 72px;
+}
+
+/* 用 :first-of-type 而不是 :first-child —— 顶上有提示条时（后端没起来那条 .hint），
+   第一个孩子是那个 div，:first-child 就落不到第一章上，头一章会凭空多出 72px */
+.guide-chapter:first-of-type {
+    margin-top: 0;
+}
+
+.guide-chapter-head {
+    position: relative;
+    border-bottom: 1px solid var(--border);
+    padding: 0 0 12px 15px;
+    margin-bottom: 30px;
+}
+
+/* 章标题左边那条粗色条：全页唯一表示「这一层是章」的记号。
+   高=标题那一行的高度（padding-bottom 12px 正好是内容的下沿） */
+.guide-chapter-head::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 16px;
+    width: 5px;
+    border-radius: 3px;
+    background: var(--guide-chap);
+}
+
+.guide-chapter-head h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--guide-chap);
+}
+
+/* 节 = 一个页面。左侧一条细线 + 缩进：把「这几节同属上一章」画出来 */
+.guide-page {
+    margin-bottom: 52px;
+    padding-left: 14px;
+    border-left: 2px solid var(--border);
+    scroll-margin-top: 16px;
+}
+
+.guide-page:last-child {
+    margin-bottom: 0;
+}
+
+.guide-page-title {
+    margin: 0 0 12px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--guide-sec);
+}
+
+/* 节标题前面那个小方块：与章的色条同色、但轻得多 —— 「章的下一层」 */
+.guide-page-title::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 9px;
+    border-radius: 2px;
+    background: var(--guide-chap);
+    vertical-align: 1px;
+}
+
+/* 每节的「这一页是干什么的」—— 逐字来自 modules.js 的 desc，不另写一份 */
+.guide-page-desc {
+    font-weight: 400;
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+/* 「这个模块现在是关的」—— 向配置页那个 off 态看齐（虚线 + --warn），
+   让人一眼认出「这与配置页说的是同一件事」，而不是又一套新配色 */
+.guide-mod-off {
+    border: 1px dashed var(--warn);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin: 0 0 14px;
+    background: rgba(210, 153, 34, .07);
+}
+
+.guide-mod-off .row {
+    margin-top: 8px;
+}
+
+/* 「这一页还缺哪个根」—— 挂在那一节的标题底下。逐项的文字透传后端（与那张遮罩同一句话），
+   这里只管长什么样：与遮罩卡片同一个 --warn 色系，免得看着像另一回事 */
+.guide-gate {
+    border: 1px dashed var(--warn);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin: 0 0 12px;
+    background: rgba(210, 153, 34, .07);
+}
+
+.guide-gate ul {
+    margin: 6px 0 0;
+    padding-left: 20px;
+}
+
+/* ---------- 正文：md 画出来的 HTML（GitHub 暗色观感） ----------
+   一个 md 文件一块 .md-body（每节、以及章首那段导言各一块），块与块之间不共享状态，
+   所以下面全是后代选择器，不写 > 之外的花样。
+   字号比正文（14px）小一档：说明页是长文，13px/1.8 读着才不挤。 */
+.md-body {
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text);
+    word-wrap: break-word;
+}
+
+/* 一块里第一个 / 最后一个元素的上下外边距不吃进版面 —— 否则每块正文都会顶着标题、
+   或与下一个标题之间空出一大截 */
+.md-body > :first-child {
+    margin-top: 0;
+}
+
+.md-body > :last-child {
+    margin-bottom: 0;
+}
+
+.md-body p {
+    margin: 10px 0;
+}
+
+/* 标题层级：md 里的 `##` 是**页边界**（那一行不渲染，标题由 guide.js 画成
+   .guide-page-title），真正进 .md-body 的是页内小节 `###` 起（见 guide-data.js 文件头）。
+   所以这一套比看起来低一级：**`###` 才拿「青绿 + 下划线」那个小节的样式**。
+   1~6 级都写上，将来正文里出现更深的层级也不至于变成浏览器默认的大字 */
+.md-body h1,
+.md-body h2,
+.md-body h3,
+.md-body h4,
+.md-body h5,
+.md-body h6 {
+    margin: 26px 0 10px;
+    line-height: 1.35;
+    font-weight: 600;
+}
+
+/* 正文里的小节标题：青绿 + 一条下划线，与节标题（白 18px）和章标题（蓝 24px）分开 ——
+   三层各一色，不会看串。h1 / h2 正常不该出现（一级标题归 modules.js、`##` 是页边界），
+   留着只是防手滑 —— 手滑写了 `##` 会被当成新的一页，guide-check.js 的块数断言会红 */
+.md-body h1,
+.md-body h2,
+.md-body h3 {
+    font-size: 16px;
+    color: var(--guide-sub);
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+.md-body h4 {
+    font-size: 15px;
+    color: var(--guide-sec);
+}
+
+.md-body h5 {
+    font-size: 14px;
+    color: var(--text-dim);
+}
+
+.md-body h6 {
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+.md-body ul,
+.md-body ol {
+    margin: 10px 0;
+    padding-left: 24px;
+}
+
+/* 这一页的正文主体就是一条条「按钮名：点了会怎样」的清单，行挨行排会糊成一片 ——
+   条与条之间留出半行，扫读时才知道一条到哪儿为止 */
+.md-body li {
+    margin: 7px 0;
+}
+
+/* 嵌套列表（md 里缩进两格）不要每层再撑开一次行距 */
+.md-body li > ul,
+.md-body li > ol {
+    margin: 5px 0;
+}
+
+.md-body strong {
+    font-weight: 600;
+    color: #f0f3f7;
+}
+
+.md-body a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.md-body a:hover {
+    text-decoration: underline;
+}
+
+/* 行内代码：GitHub 那个「小胶囊」—— 深浅两层底色 + 细边，长文里一眼分得出键名与路径 */
+.md-body code {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 12px;
+    padding: 1px 5px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--panel-2);
+}
+
+.md-body pre {
+    margin: 10px 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+    overflow: auto;
+}
+
+.md-body pre code {
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.md-body blockquote {
+    margin: 10px 0;
+    padding: 2px 12px;
+    border-left: 3px solid var(--border);
+    color: var(--text-dim);
+}
+
+.md-body hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 16px 0;
+}
+
+/* 表格：display:block + overflow:auto 是抄 GitHub 的 —— 宽表格自己横向滚，
+   不把整页撑出一条横向滚动条 */
+.md-body table {
+    display: block;
+    max-width: 100%;
+    overflow: auto;
+    margin: 10px 0;
+    border-collapse: collapse;
+}
+
+.md-body th,
+.md-body td {
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    text-align: left;
+}
+
+.md-body th {
+    background: var(--panel-2);
+    font-weight: 600;
+}
+
+.md-body tbody tr:nth-child(2n) td {
+    background: rgba(255, 255, 255, .02);
+}
+
+/* ---------- 正文里的图 ----------
+   三个状态，靠 .md-imgwrap 上的 class 切（guide.js 的 wireImages 负责加）：
+   刚画出来什么都不显示 → 加载成功显示图 → 加载失败显示占位框。
+   **默认两个都不显示**（而不是先显示占位框）是为了不出那一下闪烁：如果一上来就画占位框，
+   以后真把图放进去了，每张图都会先闪一下虚线框再变图。 */
+.md-imgwrap {
+    display: block;
+    margin: 18px 0 12px;
+}
+
+.md-img {
+    display: none;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+}
+
+.md-imgwrap.is-loaded .md-img {
+    display: block;
+}
+
+/* 图还没截时的占位框：虚线 + 斜纹，与「这里本该有一张图、图里画什么」的文字说明。
+   把图放进 static/img/guide/ 之后这一框自动消失（加载成功就走上面那条），不用改代码。 */
+.md-imgph {
+    display: none;
+    box-sizing: border-box;
+    padding: 18px;
+    text-align: center;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.8;
+    background: repeating-linear-gradient(45deg,
+        rgba(127, 127, 127, .06) 0 10px, transparent 10px 20px);
+}
+
+.md-imgwrap.is-missing .md-imgph {
+    display: block;
+}
+
+.md-imgph-tag {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: var(--warn);
+}
+
+@media (max-width: 900px) {
+    .guide-wrap {
+        flex-direction: column;
+    }
+
+    .guide-toc {
+        position: static;
+        flex: none;
+        width: 100%;
+        max-height: none;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+        padding: 0 0 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+    }
+
+    .guide-toc .toc-chap {
+        width: 100%;
+        margin: 6px 0 2px;
+    }
+
+    .guide-toc a {
+        padding: 2px 8px;
+    }
+
+    .guide-toc a.toc-sub {
+        padding-left: 8px;
+    }
+}
+
+/* ---------- 打印（ctrl+P / 说明页「打印」） ----------
+   全站第一处 @media print（2026-09-30）。说明页是唯一一个「可能真被打印出来」的页面
+   （发给朋友时「照着纸上做」比开着浏览器切窗口方便），所以只针对它调，别顺手扩到全站。
+   三件事：去掉界面外壳与左侧目录、把配色压成黑字、每章另起一页。
+   **浏览器默认不打印背景色、但文字色照打** —— 不压的话，说明页那套亮白 / 青绿的标题
+   打在纸上是一片浅灰，等于没印。 */
+@media print {
+    .sidebar,
+    .workbench-head,
+    .guide-toc,
+    .page-gate {
+        display: none;
+    }
+
+    body,
+    .layout,
+    .workbench,
+    .workbench-body {
+        display: block;
+        min-height: 0;
+        height: auto;
+        overflow: visible;
+        margin: 0;
+        padding: 0;
+        background: #fff;
+        color: #000;
+    }
+
+    .guide-wrap {
+        display: block;
+        --guide-chap: #000;
+        --guide-sec: #000;
+        --guide-sub: #000;
+    }
+
+    .guide-wrap,
+    .md-body {
+        color: #000;
+        font-size: 11pt;
+    }
+
+    /* 底色一律去掉：块 / 胶囊 / 表头在纸上只有碳粉 */
+    .md-body code,
+    .md-body pre,
+    .md-body th,
+    .md-body blockquote,
+    .hint,
+    .guide-mod-off,
+    .guide-gate {
+        background: none;
+        color: #000;
+        border-color: #000;
+    }
+
+    .guide-page {
+        border-top: 0;
+        padding-top: 0;
+        margin-top: 18pt;
+    }
+
+    /* 每章另起一页 —— 第一张不（否则封面那张白纸白印一次） */
+    .guide-chapter {
+        break-before: page;
+    }
+
+    .guide-chapter:first-of-type {
+        break-before: auto;
+    }
+
+    /* 图与它下面那句说明别被切成两页 */
+    .md-imgwrap,
+    .md-body table,
+    .md-body pre {
+        break-inside: avoid;
+    }
+
+    /* 打印出来点不着，别留一个蓝色下划线的样子 */
+    .md-body a,
+    .guide-toc a {
+        color: #000;
+        text-decoration: none;
+    }
+}

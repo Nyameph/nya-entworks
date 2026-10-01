@@ -1,0 +1,13 @@
+#!/bin/sh
+# 每次提交后把 patch 版本号 +1（1.0.1 -> 1.0.2），并生成一个独立的
+# "chore: bump version to X" 提交。较大版本不走这儿，手动跑
+#   python tools/bump_version.py minor
+#
+# 这里一行业务判定都不放，全转给 python 脚本（它认「哪些提交该跳过」，
+# 规则见 tools/bump_version.py 的模块注释）—— 脚本是同一份，不会两边各改各的漂移。
+#
+# 生效前提：跑过一次 `git config core.hooksPath .githooks`。
+# .git/config 不进版本库，所以每台机器 / 每次新 clone 都要重做一次；
+# 忘了装不会报错，症状只是「版本号一直不动」（装法也写在 tools/README.md）。
+root="$(git rev-parse --show-toplevel 2>/dev/null)" || root="$(dirname "$0")/.."
+exec python "$root/tools/bump_version.py" --auto

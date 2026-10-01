@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>呜啊娱乐工坊</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <!-- 静态资源直读磁盘，但浏览器按 query 缓存：改动大时（如排版级改动）记得抬这个版本号 -->
+    <link rel="stylesheet" href="css/app.css?v=20261001a">
+</head>
+<body>
+<div class="layout">
+    <!-- 左侧模块导航。模块在 js/modules.js 里注册，新增模块不动这里 -->
+    <nav class="sidebar">
+        <!-- 版本号由 app.js 从 /api/version 取回来填进 #app-version（真源是 pom.xml 的
+             <version>）。取不到就留空 —— 空 span 不占宽度，品牌区照旧 -->
+        <div class="brand">呜啊娱乐工坊<span id="app-version" class="brand-ver"></span></div>
+        <ul id="nav" class="nav"></ul>
+        <!-- 底部这一栏叫「系统工具」：上面两条（文件记录 / 任务记录，由 modules.js 注册、app.js 画）
+             加下面三个按钮，共五个入口。每个入口前面都有一个单色小图示（.ico），
+             左侧那一列竖着对齐；右端留给数量徽章 / 状态灯（见 app.css 的 .env-btn） -->
+        <div class="sidebar-foot">
+            <ul id="nav-foot" class="nav"></ul>
+            <!-- 齿轮：进系统配置页（本机路径与常用开关）。它不是业务模块，故不进上面的导航列表 -->
+            <button id="config-btn" class="env-btn" type="button" title="本机路径与常用开关">
+                <span class="env-main"><span class="ico">⚙</span><span>系统配置</span></span>
+            </button>
+            <!-- 使用说明：每个页面怎么用（带图）。与系统配置一样是「页」不是业务模块，
+                 故同样只在 modules.js 注册路由、不进上面的导航列表。
+                 图标用纯 ASCII 的问号：U+2699 那条纪律（文本呈现才在 Windows 上单色一致） -->
+            <button id="guide-btn" class="env-btn" type="button" title="每个页面怎么用（带图）">
+                <span class="env-main"><span class="ico">?</span><span>使用说明</span></span>
+            </button>
+            <!-- 状态灯是贴右端的（与上面两条链接的数量徽章同一侧），故它不在 .env-main 里 -->
+            <button id="env-btn" class="env-btn" type="button">
+                <span class="env-main"><span class="ico">✚</span><span>环境自检</span></span>
+                <span id="env-dot" class="dot dot-unknown"></span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="workbench">
+        <header class="workbench-head">
+            <h1 id="page-title">—</h1>
+            <p id="page-desc" class="page-desc"></p>
+        </header>
+        <section id="page-body" class="workbench-body"></section>
+    </main>
+</div>
+
+<!-- 环境自检抽屉 -->
+<div id="env-panel" class="drawer" hidden>
+    <div class="drawer-head">
+        <strong>环境自检</strong>
+        <button id="env-close" class="btn-plain" type="button">关闭</button>
+    </div>
+    <div id="env-body" class="drawer-body"></div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="js/api.js?v=20260929c"></script>
+<script src="js/tasks.js"></script>
+<script src="js/mangadict.js"></script>
+<script src="js/mangatagpicker.js"></script>
+<script src="js/mangaarchive.js"></script>
+<script src="js/mangatag.js"></script>
+<script src="js/mangacard.js"></script>
+<script src="js/mangareader.js"></script>
+<script src="js/manganew.js?v=20260930a"></script>
+<script src="js/mangaunarchived.js"></script>
+<script src="js/mangaconflict.js"></script>
+<script src="js/mangarandom.js"></script>
+<!-- 歌曲：player 与 action 是各页共用的，要在它们之前；songform / shoutform（列表式表单）
+     放 songtag 之后、action 之前 —— songaction.js 的「修改」按 cfg.form 分派到这两份组件 -->
+<script src="js/songplayer.js?v=20260930b"></script>
+<script src="js/songtag.js"></script>
+<script src="js/songform.js?v=20260930a"></script>
+<script src="js/shoutform.js?v=20260930a"></script>
+<script src="js/songaction.js?v=20260929a"></script>
+<script src="js/song.js?v=20260930a"></script>
+<script src="js/songscore.js?v=20260930b"></script>
+<script src="js/shoutlist.js?v=20260930a"></script>
+<script src="js/shoutscore.js?v=20260930a"></script>
+<!-- SongOriForm 是原曲页「新增原曲 / 编辑」那一套表单（两个入口共用同一个弹窗），
+     必须在 songstat.js 前面 —— songstat.js 只负责转交，并把自己的「音频 + 歌词」播放浮层
+     （playPair）导出给它，八格里的播放键就用这一个实现 -->
+<script src="js/songoriform.js?v=20260925b"></script>
+<script src="js/songstat.js?v=20260925b"></script>
+<script src="js/songartist.js"></script>
+<!-- RhymeQuery 是韵脚词典页与填词页右栏共用的查询组件，必须在两个用它的页面前面 -->
+<script src="js/rhymequery.js?v=20260915c"></script>
+<script src="js/songfill.js?v=20261001a"></script>
+<script src="js/songrhyme.js?v=20260917d"></script>
+<script src="js/task-page.js"></script>
+<script src="js/fileoplog.js?v=20260923c"></script>
+<script src="js/settings.js?v=20260918a"></script>
+<!-- 使用说明页：渲染器（md.js）、清单与固定文案（guide-data.js）、页面（guide.js）三层分开。
+     md.js 是零依赖的 markdown 渲染器，也只有这一页用；三者都放在 modules.js 之前 ——
+     顶层 const 有 TDZ，放前面就不必推理「谁先谁后」 -->
+<script src="js/md.js?v=20260929c"></script>
+<script src="js/guide-data.js?v=20260930b"></script>
+<script src="js/guide.js?v=20260930c"></script>
+<!-- modules.js / app.js 是框架那一对：改的是路由与页面注册表，记得一起抬版本号 -->
+<script src="js/modules.js?v=20260930d"></script>
+<script src="js/app.js?v=20260930e"></script>
+</body>
+</html>

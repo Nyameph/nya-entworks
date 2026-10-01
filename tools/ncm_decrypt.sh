@@ -1,0 +1,1 @@
+python ncm_decrypt.py -batch "E:\Music\VipSongsDownload" -a
